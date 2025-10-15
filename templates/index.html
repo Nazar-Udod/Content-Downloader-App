@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Завантажувач контенту</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .search-form input[type="text"] {
+            flex-grow: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .search-form input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        .search-form button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .search-form button:hover {
+            background-color: #2980b9;
+        }
+        .results-container {
+            margin-top: 20px;
+        }
+        .result-item {
+            background-color: #fdfdfd;
+            border: 1px solid #eef;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .result-item h3 {
+            margin-top: 0;
+            color: #2980b9;
+        }
+        .result-item a {
+            color: #2980b9;
+            text-decoration: none;
+        }
+        .result-item a:hover {
+            text-decoration: underline;
+        }
+        .result-item p {
+            margin-bottom: 15px;
+        }
+        .result-item .link {
+            font-size: 0.9em;
+            color: #555;
+            word-break: break-all;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .actions button, .actions a {
+            padding: 8px 15px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        .actions button {
+            background-color: #27ae60;
+            border: none;
+        }
+        .actions button:hover {
+            opacity: 0.85;
+        }
+        .actions a {
+            background-color: #e67e22;
+        }
+        .actions a:hover {
+            opacity: 0.85;
+        }
+        .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: white;
+            margin-left: 10px;
+        }
+        .tag.text { background-color: #3498db; }
+        .tag.video { background-color: #c0392b; }
+        .tag.audio { background-color: #8e44ad; }
+        .error, .info {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .error {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .info {
+            background-color: #f1c40f;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Завантажувач контенту</h1>
+        <p>Введіть пошуковий запит, щоб знайти статті, відео або музику.</p>
+
+        <form class="search-form" action="/search" method="post">
+            <input type="text" name="query" placeholder="Наприклад, 'Історія FastAPI'" value="{{ query or '' }}" required>
+            <button type="submit">Пошук</button>
+        </form>
+
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        {% if query and not results and not error %}
+            <div class="info">Нічого не знайдено за запитом "{{ query }}". Спробуйте інший.</div>
+        {% endif %}
+
+        {% if results %}
+            <h2>Результати пошуку для "{{ query }}"</h2>
+            <div class="results-container">
+            {% for result in results %}
+                <div class="result-item">
+                    <h3>
+                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">{{ result.title }}</a>
+                    </h3>
+                    <p class="link">{{ result.link }}</p>
+                    <p>{{ result.snippet }}</p>
+
+                    <div class="actions">
+                    {% if result.type == 'text' %}
+                        <form action="/convert" method="post" style="margin:0;">
+                            <input type="hidden" name="url" value="{{ result.link }}">
+                            <button type="submit">Конвертувати в PDF</button>
+                        </form>
+                        <span class="tag text">Стаття</span>
+                    {% elif result.type == 'video' %}
+                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">Перейти на YouTube</a>
+                        <span class="tag video">Відео</span>
+                    {% elif result.type == 'audio_yt_music' %}
+                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">Слухати в YouTube Music</a>
+                        <span class="tag audio">Аудіо</span>
+                    {% elif result.type == 'audio_spotify' %}
+                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">Слухати в Spotify</a>
+                        <span class="tag audio">Аудіо</span>
+                    {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
