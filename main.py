@@ -60,8 +60,19 @@ async def search_content(request: Request, query: str = Form(...)):
         if 'organic_results' in results:
             for result in results['organic_results']:
                 link = result.get('link', '')
-                result_type = 'text'  # За замовчуванням
-                if 'youtube.com/watch' in link:
+                title = result.get('title', '')
+
+                # Встановлюємо тип за замовчуванням
+                result_type = 'text'
+
+                # Визначаємо тип за розширенням файлу або URL
+                if link.endswith('.pdf') or title.startswith('[PDF]'):
+                    result_type = 'pdf'
+                elif link.endswith('.doc') or link.endswith('.docx'):
+                    result_type = 'doc'
+                elif link.endswith('.ppt') or link.endswith('.pptx'):
+                    result_type = 'ppt'
+                elif 'youtube.com/watch' in link:
                     result_type = 'video'
                 elif 'music.youtube.com' in link:
                     result_type = 'audio_yt_music'
@@ -69,7 +80,7 @@ async def search_content(request: Request, query: str = Form(...)):
                     result_type = 'audio_spotify'
 
                 processed_results.append({
-                    'title': result.get('title', 'Без назви'),
+                    'title': title,
                     'link': link,
                     'snippet': result.get('snippet', ''),
                     'type': result_type

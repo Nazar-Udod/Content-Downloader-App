@@ -124,6 +124,9 @@
         .tag.text { background-color: #3498db; }
         .tag.video { background-color: #c0392b; }
         .tag.audio { background-color: #8e44ad; }
+        .tag.pdf { background-color: #e74c3c; }
+        .tag.doc { background-color: #2980b9; }
+        .tag.ppt { background-color: #d35400; }
         .error, .info {
             text-align: center;
             padding: 15px;
@@ -179,6 +182,15 @@
                     {% elif result.type == 'video' %}
                         <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">Перейти на YouTube</a>
                         <span class="tag video">Відео</span>
+                    {% elif result.type == 'pdf' %}
+                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer" download>Завантажити PDF</a>
+                        <span class="tag pdf">PDF Документ</span>
+                    {% elif result.type == 'doc' %}
+                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer" download>Завантажити DOC</a>
+                        <span class="tag doc">DOC Документ</span>
+                    {% elif result.type == 'ppt' %}
+                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer" download>Завантажити PPT</a>
+                        <span class="tag ppt">Презентація</span>
                     {% elif result.type == 'audio_yt_music' %}
                         <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">Слухати в YouTube Music</a>
                         <span class="tag audio">Аудіо</span>
