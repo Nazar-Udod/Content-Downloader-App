@@ -417,46 +417,167 @@ async def optimize_content(request: Request):
             "is_estimated": form_data.get(f"is_estimated_{i}") == 'True',
             "cache_file": form_data.get(f"cache_file_{i}")
         })
-        # Оновлюємо відсутні розміри
-        fully_updated_list = []
-        needs_update = False
 
-        for item in items_to_optimize:
-            # Перевіряємо, чи відсутній розмір
-            if item.get('size_mb') is None or item.get('size_mb') == 0.0:
-                needs_update = True
-                updated_item = update_item_size(item)
-                fully_updated_list.append(updated_item)
-            else:
-                fully_updated_list.append(item)
+    # Оновлюємо відсутні розміри
+    fully_updated_list = []
+    needs_update = False
 
-        if needs_update:
-            items_to_optimize = fully_updated_list  # Використовуємо список з новими розмірами
+    for item in items_to_optimize:
+        # Перевіряємо, чи відсутній розмір
+        if item.get('size_mb') is None or item.get('size_mb') == 0.0:
+            needs_update = True
+            updated_item = update_item_size(item)
+            fully_updated_list.append(updated_item)
+        else:
+            fully_updated_list.append(item)
 
-        # Зберігаємо оновлені ваги та об'єм пам'яті в сесії
-        request.session["optimization_list"] = items_to_optimize
-        request.session["memory_size"] = memory_size
+    if needs_update:
+        items_to_optimize = fully_updated_list  # Використовуємо список з новими розмірами
 
-        # --- ЗАГЛУШКА АЛГОРИТМУ ---
-        try:
-            mb_limit = int(memory_size)
-            optimized_results = sorted(items_to_optimize, key=lambda x: x['weight'], reverse=True)
+    # Зберігаємо оновлені ваги та об'єм пам'яті в сесії
+    request.session["optimization_list"] = items_to_optimize
+    request.session["memory_size"] = memory_size
 
-        except Exception as e:
-            return templates.TemplateResponse("prepare.html", {
-                "request": request,
-                "items": items_to_optimize,
-                "memory_size": memory_size,
-                "error": f"Помилка під час оптимізації: {e}",
-                "total_size": sum(item.get('size_mb', 0) for item in items_to_optimize)
+    # --- АЛГОРИТМ РЮКЗАКА (МЕТОД ГІЛОК ТА МЕЖ) ---
+    optimized_results = []
+    try:
+        mb_limit = float(memory_size)
+
+        # 1. Попередня обробка:
+        #    - Відфільтрувати елементи, які не мають цінності (ваги)
+        #    - Відокремити "безкоштовні" елементи (розмір = 0, вага > 0)
+        #    - Розрахувати щільність (вага / розмір) для інших
+
+        processed_items = []  # Елементи для B&B
+        free_items_indices = set()  # Індекси "безкоштовних" елементів
+
+        for i, item in enumerate(items_to_optimize):
+            size = item.get('size_mb', 0.0)
+            value = item.get('weight', 0)  # 'weight' - це цінність (v)
+
+            # Пропускаємо безцінні або негабаритні елементи
+            if value <= 0 or size < 0:
+                continue
+
+            # "Безкоштовні" елементи - завжди беремо, якщо мають цінність
+            if size == 0.0:
+                free_items_indices.add(i)
+                continue
+
+            # Пропускаємо елементи, які ніколи не помістяться
+            if size > mb_limit:
+                continue
+
+            # Додаємо решту для сортування та B&B
+            processed_items.append({
+                'value': value,
+                'size': size,
+                'density': value / size,  # щільність (pi / wi)
+                'original_index': i  # Зберігаємо індекс
             })
-        # --- Кінець заглушки ---
 
-        # Повертаємо ту саму сторінку з результатами
+        # 2. Сортування за щільністю (цінністю)
+        # Це ключовий крок для методу гілок та меж
+        processed_items.sort(key=lambda x: x['density'], reverse=True)
+
+        n = len(processed_items)
+
+        # Глобальні змінні для відстеження найкращого рішення
+        Vbest = 0.0  # Найкраща знайдена сумарна "вага" (цінність)
+        best_selection_indices = set()  # Індекси найкращого набору
+
+        # 3. Допоміжна функція для розрахунку верхньої межі (bound)
+        def calculate_bound(node_index: int, current_value: float, current_size: float) -> float:
+            """
+            Розраховує верхню межу цінності для поточної гілки.
+            """
+            bound = current_value
+            total_size = current_size
+
+            for i in range(node_index, n):
+                item = processed_items[i]
+                if total_size + item['size'] <= mb_limit:
+                    # Елемент поміщається повністю
+                    total_size += item['size']
+                    bound += item['value']
+                else:
+                    # Елемент не поміщається - беремо дробову частину
+                    remaining_capacity = mb_limit - total_size
+                    bound += item['density'] * remaining_capacity
+                    break  # Рюкзак заповнений
+            return bound
+
+        # 4. Основна рекурсивна функція (DFS + Branch and Bound)
+        def solve_knapsack(node_index: int, current_value: float, current_size: float,
+                           current_selection_indices: list):
+            """
+            Рекурсивно досліджує дерево рішень.
+            node_index - індекс поточного елемента, що розглядається.
+            """
+            nonlocal Vbest, best_selection_indices
+
+            # Базовий випадок: дійшли до кінця (листок дерева)
+            if node_index == n:
+                if current_value > Vbest:
+                    Vbest = current_value
+                    best_selection_indices = set(current_selection_indices)
+                return
+
+            # Розраховуємо верхню межу для цієї гілки
+            bound = calculate_bound(node_index, current_value, current_size)
+
+            # 1. Відсічення (Pruning)
+            # Якщо межа гірша за вже знайдене рішення, не йдемо далі
+            if bound <= Vbest:
+                return
+
+            item = processed_items[node_index]
+
+            # 2. Гілка 1: *Включити* елемент (якщо він поміщається)
+            if current_size + item['size'] <= mb_limit:
+                current_selection_indices.append(item['original_index'])
+                solve_knapsack(
+                    node_index + 1,
+                    current_value + item['value'],
+                    current_size + item['size'],
+                    current_selection_indices
+                )
+                current_selection_indices.pop()  # Backtrack (повернення)
+
+            # 3. Гілка 2: *Не включати* елемент
+            solve_knapsack(
+                node_index + 1,
+                current_value,
+                current_size,
+                current_selection_indices
+            )
+
+        # 4. Запуск розв'язання
+        solve_knapsack(0, 0.0, 0.0, [])
+
+        # 5. Формування кінцевого результату
+        # Об'єднуємо індекси з найкращого набору B&B
+        # та "безкоштовні" елементи, які ми відклали
+        final_indices = best_selection_indices.union(free_items_indices)
+
+        for i in final_indices:
+            optimized_results.append(items_to_optimize[i])
+
+
+    except Exception as e:
         return templates.TemplateResponse("prepare.html", {
             "request": request,
-            "items": items_to_optimize,  # Список з оновленими вагами
+            "items": items_to_optimize,
             "memory_size": memory_size,
-            "optimized_results": optimized_results,  # Результат заглушки
+            "error": f"Помилка під час оптимізації: {e}",
             "total_size": round(sum(item.get('size_mb', 0) for item in items_to_optimize), 2)
         })
+
+    # Повертаємо ту саму сторінку з результатами
+    return templates.TemplateResponse("prepare.html", {
+        "request": request,
+        "items": items_to_optimize,  # Список з оновленими вагами
+        "memory_size": memory_size,
+        "optimized_results": optimized_results,
+        "total_size": round(sum(item.get('size_mb', 0) for item in items_to_optimize), 2)
+    })
