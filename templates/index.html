@@ -26,6 +26,7 @@
             text-align: center;
             margin-bottom: 25px;
         }
+        /* ... (решта ваших стилів без змін) ... */
         .search-form {
             display: flex;
             gap: 10px;
@@ -37,11 +38,6 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        .search-form input[type="text"]:focus {
-            outline: none;
-            border-color: #3498db;
         }
         .search-form button {
             padding: 12px 20px;
@@ -51,14 +47,8 @@
             border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
-            transition: background-color 0.3s;
         }
-        .search-form button:hover {
-            background-color: #2980b9;
-        }
-        .results-container {
-            margin-top: 20px;
-        }
+        .results-container { margin-top: 20px; }
         .result-item {
             background-color: #fdfdfd;
             border: 1px solid #eef;
@@ -67,30 +57,11 @@
             margin-bottom: 15px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         }
-        .result-item h3 {
-            margin-top: 0;
-            color: #2980b9;
-        }
-        .result-item a {
-            color: #2980b9;
-            text-decoration: none;
-        }
-        .result-item a:hover {
-            text-decoration: underline;
-        }
-        .result-item p {
-            margin-bottom: 15px;
-        }
-        .result-item .link {
-            font-size: 0.9em;
-            color: #555;
-            word-break: break-all;
-        }
-        .actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
+        .result-item h3 { margin-top: 0; color: #2980b9; }
+        .result-item a { color: #2980b9; text-decoration: none; }
+        .result-item p { margin-bottom: 15px; }
+        .result-item .link { font-size: 0.9em; color: #555; word-break: break-all; }
+        .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .actions button, .actions a {
             padding: 8px 15px;
             border-radius: 6px;
@@ -98,29 +69,10 @@
             color: white;
             font-size: 14px;
             cursor: pointer;
-            transition: opacity 0.3s;
         }
-        .actions button {
-            background-color: #27ae60;
-            border: none;
-        }
-        .actions button:hover {
-            opacity: 0.85;
-        }
-        .actions a {
-            background-color: #e67e22;
-        }
-        .actions a:hover {
-            opacity: 0.85;
-        }
-        .tag {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 5px;
-            font-size: 12px;
-            color: white;
-            margin-left: 10px;
-        }
+        .actions button { background-color: #27ae60; border: none; }
+        .actions a { background-color: #e67e22; }
+        .tag { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 12px; color: white; margin-left: 10px; }
         .tag.text { background-color: #3498db; }
         .tag.video { background-color: #c0392b; }
         .tag.audio { background-color: #8e44ad; }
@@ -133,18 +85,77 @@
             border-radius: 8px;
             margin-top: 20px;
         }
-        .error {
-            background-color: #e74c3c;
-            color: white;
+        .error { background-color: #e74c3c; color: white; }
+        .info { background-color: #f1c40f; color: #333; }
+        .selection-controls {
+            background-color: #f8f9fa;
+            border: 1px solid #e0e6ed;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
         }
-        .info {
-            background-color: #f1c40f;
-            color: #333;
+        .selection-controls label { font-weight: 500; display: flex; align-items: center; gap: 8px; }
+        .selection-controls input[type="number"] { width: 60px; padding: 5px 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        .selection-controls input[type="checkbox"] { transform: scale(1.3); }
+
+        /* -- НОВІ СТИЛІ -- */
+        .add-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            background-color: #3498db; /* Змінив колір, як у пошуку */
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: background-color 0.3s;
+        }
+        .add-button:hover {
+            background-color: #2980b9;
+        }
+
+        .header-nav {
+            background-color: #eaf5ff;
+            border: 1px solid #bde0ff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .header-nav a {
+            color: #0056b3;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .header-nav a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <div class="container">
+
+        <div class="header-nav">
+            <a href="/optimization-list">
+                Обрано для оптимізації: <strong>{{ optimization_count or 0 }}</strong>
+            </a>
+            {% if optimization_count and optimization_count > 0 %}
+                <span style="color: #ccc; margin: 0 10px;">|</span>
+                <a href="/clear-list"
+                   onclick="return confirm('Ви впевнені, що хочете очистити список?')"
+                   style="color: #e74c3c;">
+                    Очистити список
+                </a>
+            {% endif %}
+        </div>
+
         <h1>Завантажувач контенту</h1>
         <p>Введіть пошуковий запит, щоб знайти статті, відео або музику.</p>
 
@@ -163,45 +174,69 @@
 
         {% if results %}
             <h2>Результати пошуку для "{{ query }}"</h2>
-            <div class="results-container">
-            {% for result in results %}
-                <div class="result-item">
-                    <h3>
-                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">{{ result.title }}</a>
-                    </h3>
-                    <p class="link">{{ result.link }}</p>
-                    <p>{{ result.snippet }}</p>
 
-                    <div class="actions">
-                    {% if result.type == 'text' %}
-                        <form action="/convert" method="post" style="margin:0;">
-                            <input type="hidden" name="url" value="{{ result.link }}">
-                            <button type="submit">Конвертувати в PDF</button>
-                        </form>
-                        <span class="tag text">Стаття</span>
-                    {% elif result.type == 'video' %}
-                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">Перейти на YouTube</a>
-                        <span class="tag video">Відео</span>
-                    {% elif result.type == 'pdf' %}
-                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer" download>Завантажити PDF</a>
-                        <span class="tag pdf">PDF Документ</span>
-                    {% elif result.type == 'doc' %}
-                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer" download>Завантажити DOC</a>
-                        <span class="tag doc">DOC Документ</span>
-                    {% elif result.type == 'ppt' %}
-                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer" download>Завантажити PPT</a>
-                        <span class="tag ppt">Презентація</span>
-                    {% elif result.type == 'audio_yt_music' %}
-                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">Слухати в YouTube Music</a>
-                        <span class="tag audio">Аудіо</span>
-                    {% elif result.type == 'audio_spotify' %}
-                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">Слухати в Spotify</a>
-                        <span class="tag audio">Аудіо</span>
-                    {% endif %}
+            <form id="results-form" method="post">
+                <div class="results-container">
+                {% for result in results %}
+                    <div class="result-item">
+                        <h3>
+                            <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">{{ result.title }}</a>
+                        </h3>
+                        <p class="link">{{ result.link }}</p>
+                        <p>{{ result.snippet }}</p>
+
+                        <div class="actions">
+                        {% if result.type == 'text' %}
+                            <button type="submit" formaction="/convert" formmethod="post" name="url" value="{{ result.link }}">
+                                Конвертувати в PDF
+                            </button>
+                            <span class="tag text">Стаття</span>
+                        {% elif result.type == 'video' %}
+                            <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">Перейти на YouTube</a>
+                            <span class="tag video">Відео</span>
+                        {% elif result.type == 'pdf' %}
+                            <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer" download>Завантажити PDF</a>
+                            <span class="tag pdf">PDF Документ</span>
+                        {% elif result.type == 'doc' %}
+                            <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer" download>Завантажити DOC</a>
+                            <span class="tag doc">DOC Документ</span>
+                        {% elif result.type == 'ppt' %}
+                            <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer" download>Завантажити PPT</a>
+                            <span class="tag ppt">Презентація</span>
+                        {% elif result.type == 'audio_yt_music' %}
+                            <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">Слухати в YouTube Music</a>
+                            <span class="tag audio">Аудіо</span>
+                        {% elif result.type == 'audio_spotify' %}
+                            <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">Слухати в Spotify</a>
+                            <span class="tag audio">Аудіо</span>
+                        {% endif %}
+                        </div>
+
+                        <div class="selection-controls">
+                            <label>
+                                <input type="checkbox" name="selected_indices" value="{{ loop.index0 }}">
+                                Обрати для оптимізації
+                            </label>
+                            <label>
+                                Вага (1-10):
+                                <input type="number" name="weight_{{ loop.index0 }}" min="1" max="10" value="5">
+                            </label>
+
+                            <input type="hidden" name="title_{{ loop.index0 }}" value="{{ result.title }}">
+                            <input type="hidden" name="link_{{ loop.index0 }}" value="{{ result.link }}">
+                            <input type="hidden" name="snippet_{{ loop.index0 }}" value="{{ result.snippet | escape }}">
+                            <input type="hidden" name="type_{{ loop.index0 }}" value="{{ result.type }}">
+                        </div>
+
                     </div>
+                {% endfor %}
                 </div>
-            {% endfor %}
-            </div>
+
+                <button type="submit" formaction="/add-to-list" class="add-button">
+                    Додати обрані до списку
+                </button>
+            </form>
+
         {% endif %}
     </div>
 </body>

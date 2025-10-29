@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оптимізація контенту</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        h1, h2 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .result-item {
+            background-color: #fdfdfd;
+            border: 1px solid #eef;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .result-item h3 { margin-top: 0; color: #2980b9; }
+        .result-item a { color: #2980b9; text-decoration: none; }
+        .result-item p { margin-bottom: 15px; }
+        .result-item .link { font-size: 0.9em; color: #555; word-break: break-all; }
+        .error, .info {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .error { background-color: #e74c3c; color: white; }
+        .info { background-color: #f39c12; color: white; }
+        .config-form {
+            background-color: #f8f9fa;
+            border: 1px solid #e0e6ed;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .config-form label {
+            font-weight: 600;
+            font-size: 18px;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .config-form input[type="number"] {
+            width: 150px;
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .config-form button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            background-color: #e67e22;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .weight-input {
+            width: 60px;
+            padding: 5px 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .optimization-results {
+            margin-top: 30px;
+            border-top: 2px solid #3498db;
+            padding-top: 20px;
+        }
+        .page-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .page-nav a {
+            text-decoration: none;
+            color: #3498db;
+            font-weight: 500;
+        }
+        .page-nav a.clear-link {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="page-nav">
+            <a href="/">&larr; Повернутися до пошуку</a>
+            {% if items %}
+            <a href="/clear-list"
+               class="clear-link"
+               onclick="return confirm('Ви впевнені, що хочете очистити список?')">
+                Очистити список
+            </a>
+            {% endif %}
+        </div>
+
+        <h1>Налаштування оптимізації</h1>
+
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+
+        {% if not items %}
+            <div class="info">
+                Ваш список для оптимізації порожній.
+                <br>
+                Поверніться до пошуку, щоб додати матеріали.
+            </div>
+        {% endif %}
+
+        {% if items %}
+        <form class="config-form" action="/optimize" method="post">
+
+            <h2>1. Перевірте ваги (1-10)</h2>
+            <p>Змініть вагу для матеріалів, які є для вас більш пріоритетними.</p>
+
+            {% for item in items %}
+            <div class="result-item">
+                <h3>{{ item.title }}</h3>
+                <p class="link">{{ item.link }}</p>
+                <label>
+                    Вага:
+                    <input type="number" name="weight_{{ loop.index0 }}" class="weight-input" min="1" max="10" value="{{ item.weight }}">
+                </label>
+
+                <input type="hidden" name="title_{{ loop.index0 }}" value="{{ item.title }}">
+                <input type="hidden" name="link_{{ loop.index0 }}" value="{{ item.link }}">
+                <input type="hidden" name="snippet_{{ loop.index0 }}" value="{{ item.snippet | escape }}">
+                <input type="hidden" name="type_{{ loop.index0 }}" value="{{ item.type }}">
+            </div>
+            {% endfor %}
+
+            <input type="hidden" name="item_count" value="{{ items | length }}">
+
+            <hr style="margin: 25px 0;">
+
+            <h2>2. Вкажіть об'єм (заглушка)</h2>
+            <label for="memory_size">Доступний об'єм пам'яті (MB):</label>
+            <input type="number" id="memory_size" name="memory_size" min="1" value="{{ memory_size or '1000' }}">
+
+            <button type="submit">Оптимізувати!</button>
+        </form>
+        {% endif %}
+
+
+        {% if optimized_results %}
+        <div class="optimization-results">
+            <h2>Оптимальний набір (Заглушка)</h2>
+            <p>
+                Ось рекомендований набір матеріалів, відсортований за пріоритетом.
+                (Ліміт: {{ memory_size }} MB).
+            </p>
+
+            {% for result in optimized_results %}
+                <div class="result-item">
+                    <h3>
+                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">{{ result.title }}</a>
+                        <span style="font-weight: bold; color: #27ae60; margin-left: 15px;">
+                            (Вага: {{ result.weight }})
+                        </span>
+                    </h3>
+                    <p class="link">{{ result.link }}</p>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    </div>
+</body>
+</html>
