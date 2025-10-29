@@ -5,3 +5,5 @@ jinja2
 serpapi
 pdfkit
 python-dotenv
+requests
+pytube
