@@ -3,11 +3,16 @@ import io
 import pdfkit
 import serpapi
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 from starlette.middleware.sessions import SessionMiddleware
+import requests
+from pytube import YouTube
+import math
+import hashlib
+from pathlib import Path
 
 # --- Конфігурація ---
 
@@ -40,6 +45,138 @@ app.add_middleware(
     max_age=86400 * 14 # 14 днів
 )
 
+# Використовуємо, коли точний розмір неможливо отримати
+ESTIMATED_PDF_MB = 2.0
+ESTIMATED_SPOTIFY_MB = 5.0
+ESTIMATED_VIDEO_MB = 150.0 # Запасний варіант для YouTube
+ESTIMATED_AUDIO_MB = 5.0  # Запасний варіант для YT Music
+
+
+# Папка кешу
+PDF_CACHE_DIR = Path("pdf_cache")
+@app.on_event("startup")
+def on_startup():
+    """Переконуємося, що папка для кешу PDF існує."""
+    PDF_CACHE_DIR.mkdir(exist_ok=True)
+    print(f"Папка кешу PDF знаходиться тут: {PDF_CACHE_DIR.resolve()}")
+
+# Знаходимо розмір матеріалу
+def get_external_content_size_mb(link: str, content_type: str) -> (float, bool):
+    """
+    Отримує розмір для ЗОВНІШНІХ ресурсів (не для 'text').
+    Повертає (size_mb, is_estimated)
+    """
+    try:
+        if content_type in ['pdf', 'doc', 'ppt']:
+            # Додаємо user-agent, щоб уникнути блокування 403
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'}
+            # allow_redirects=True - важливо, оскільки посилання часто є перенаправленнями
+            response = requests.head(link, allow_redirects=True, timeout=5, headers=headers)
+
+            print(f"DEBUG: HEAD to {link}")
+            print(f"DEBUG: Status Code: {response.status_code}")
+            print(f"DEBUG: Headers: {response.headers}")
+
+            if response.status_code == 200:
+                content_length = response.headers.get('Content-Length')
+                if content_length:
+                    size_bytes = int(content_length)
+                    return round(size_bytes / (1024 * 1024), 2), False  # Точний розмір
+
+            # Якщо щось пішло не так, повертаємо оцінку
+            return ESTIMATED_PDF_MB, True
+
+        elif content_type == 'video':
+            yt = YouTube(link)
+            # Шукаємо "прогресивний" потік (відео + аудіо) з роздільною здатністю 720p або нижче
+            stream = yt.streams.filter(progressive=True, file_extension='mp4').get_highest_resolution()
+            if stream:
+                return round(stream.filesize / (1024 * 1024), 2), False  # Точний розмір
+            return ESTIMATED_VIDEO_MB, True  # Оцінка
+
+        elif content_type == 'audio_yt_music':
+            yt = YouTube(link)
+            stream = yt.streams.get_audio_only()
+            if stream:
+                return round(stream.filesize / (1024 * 1024), 2), False  # Точний розмір
+            return ESTIMATED_AUDIO_MB, True  # Оцінка
+
+    except Exception as e:
+        print(f"Помилка отримання зовнішнього розміру для {link}: {e}")
+        # Повертаємо оцінку у разі помилки
+        if content_type == 'video':
+            return ESTIMATED_VIDEO_MB, True
+        elif content_type == 'audio_yt_music':
+            return ESTIMATED_AUDIO_MB, True
+        else:
+            return ESTIMATED_PDF_MB, True
+
+    # Запасний варіант, якщо тип контенту невідомий (хоча цього не має статися)
+    return 0.0, True
+
+
+def update_item_size(item: dict) -> dict:
+    """
+    ДОПОМІЖНА ФУНКЦІЯ:
+    Отримує один елемент (dict), визначає його розмір
+    (генеруючи PDF або роблячи зовнішній запит)
+    і повертає оновлений елемент (dict).
+    """
+    # Ми копіюємо, щоб уникнути несподіваних змін
+    updated_item = item.copy()
+
+    size_mb = None
+    is_estimated = False
+    cache_file = updated_item.get('cache_file')
+
+    try:
+        if updated_item['type'] == 'text':
+            # Створюємо унікальне, стабільне ім'я файлу на основі URL
+            if not cache_file:
+                url_hash = hashlib.md5(updated_item['link'].encode()).hexdigest()
+                cache_file = f"{url_hash}.pdf"
+
+            cache_path = PDF_CACHE_DIR / cache_file
+
+            # Генеруємо, ТІЛЬКИ ЯКЩО файл ще не в кеші
+            if not cache_path.exists():
+                print(f"Генерація PDF для: {updated_item['link']}...")
+                # Вказуємо шлях як рядок для pdfkit
+                pdfkit.from_url(updated_item['link'], str(cache_path))
+                print(f"Збережено в: {cache_path}")
+
+            # Отримуємо розмір з файлу
+            size_bytes = cache_path.stat().st_size
+            size_mb = round(size_bytes / (1024 * 1024), 2)
+            is_estimated = False
+            updated_item['cache_file'] = cache_file
+
+        elif updated_item['type'] == 'audio_spotify':
+            size_mb = ESTIMATED_SPOTIFY_MB
+            is_estimated = True
+
+        else:
+            # Для всіх інших типів (video, audio_yt, pdf, doc...)
+            size_mb, is_estimated = get_external_content_size_mb(updated_item['link'], updated_item['type'])
+
+    except Exception as e:
+        print(f"ПОМИЛКА (update_item_size) для {updated_item['link']}: {e}")
+        # Використовуємо оцінки як запасний варіант
+        if updated_item['type'] == 'video':
+            size_mb = ESTIMATED_VIDEO_MB
+        elif updated_item['type'] in ['audio_yt_music', 'audio_spotify']:
+            size_mb = ESTIMATED_AUDIO_MB
+        else:
+            size_mb = ESTIMATED_PDF_MB
+        is_estimated = True
+        updated_item['cache_file'] = None  # Помилка, отже кеш-файлу немає
+
+    # Оновлюємо елемент
+    updated_item['size_mb'] = size_mb
+    updated_item['is_estimated'] = is_estimated
+
+    return updated_item
 
 # --- Ендпоінти ---
 
@@ -172,7 +309,10 @@ async def add_to_list(request: Request):
                     "link": link,
                     "snippet": form_data.get(f"snippet_{index}"),
                     "type": form_data.get(f"type_{index}"),
-                    "weight": int(form_data.get(f"weight_{index}", 5))
+                    "weight": int(form_data.get(f"weight_{index}", 5)),
+                    "size_mb": None,
+                    "is_estimated": False,
+                    "cache_file": None
                 })
                 existing_links.add(link)  # Оновлюємо set
 
@@ -190,11 +330,13 @@ async def get_optimization_list(request: Request):
     з повним списком елементів, збережених у сесії.
     """
     items = request.session.get("optimization_list", [])
+    total_size = sum(item.get('size_mb', 0) for item in items if item.get('size_mb'))
 
     return templates.TemplateResponse("prepare.html", {
         "request": request,
         "items": items,
-        "memory_size": request.session.get("memory_size", 1000)  # Зберігаємо і пам'ять
+        "memory_size": request.session.get("memory_size", 1000),
+        "total_size": round(total_size, 2)
     })
 
 
@@ -203,16 +345,48 @@ async def clear_list(request: Request):
     """
     Повністю очищує список оптимізації в сесії.
     """
+    # Очищуємо сесію
     request.session["optimization_list"] = []
-    request.session["memory_size"] = 1000  # Скинемо і пам'ять
+    request.session["memory_size"] = 1000
 
-    # Визначаємо, звідки прийшов користувач, і повертаємо його
-    referer = request.headers.get("referer", "/")
-    # Запобігаємо перенаправленню на сам /clear-list
-    if "/clear-list" in referer:
-        referer = "/"
+    # Перенаправляємо на головну сторінку ("/")
+    return RedirectResponse(url="/", status_code=303)
 
-    return RedirectResponse(url=referer, status_code=303)
+
+@app.post("/fetch-sizes")
+async def fetch_sizes(request: Request):
+    """
+    Примусово оновлює розміри для ВСІХ елементів у сесії,
+    використовуючи допоміжну функцію update_item_size.
+    """
+    optimization_list = request.session.get("optimization_list", [])
+    updated_list = []
+
+    for item in optimization_list:
+        # Викликаємо нашу нову функцію для кожного елемента
+        updated_list.append(update_item_size(item))
+
+    # Зберігаємо оновлений список
+    request.session["optimization_list"] = updated_list
+
+    # Повертаємо користувача на сторінку оптимізації
+    return RedirectResponse(url="/optimization-list", status_code=303)
+
+@app.get("/download-pdf/{filename}")
+async def download_cached_pdf(filename: str):
+    """
+    Надає доступ до завантаження згенерованого PDF з кешу.
+    """
+    cache_path = PDF_CACHE_DIR / filename
+    if not cache_path.exists():
+        return HTMLResponse(content="<h1>Файл не знайдено</h1><p>Можливо, кеш було очищено.</p>", status_code=404)
+
+    # Використовуємо FileResponse для ефективної віддачі файлу
+    return FileResponse(
+        path=cache_path,
+        media_type="application/pdf",
+        filename=f"{filename}.pdf"  # Пропонуємо користувачу ім'я файлу
+    )
 
 
 @app.post("/optimize", response_class=HTMLResponse)
@@ -227,13 +401,37 @@ async def optimize_content(request: Request):
 
     items_to_optimize = []
     for i in range(item_count):
+        size_mb_str = form_data.get(f"size_mb_{i}", "0.0")
+        try:
+            size_mb = float(size_mb_str)
+        except ValueError:
+            size_mb = 0.0
+
         items_to_optimize.append({
             "title": form_data.get(f"title_{i}"),
             "link": form_data.get(f"link_{i}"),
             "snippet": form_data.get(f"snippet_{i}"),
             "type": form_data.get(f"type_{i}"),
-            "weight": int(form_data.get(f"weight_{i}", 5))
+            "weight": int(form_data.get(f"weight_{i}", 5)),
+            "size_mb": size_mb,
+            "is_estimated": form_data.get(f"is_estimated_{i}") == 'True',
+            "cache_file": form_data.get(f"cache_file_{i}")
         })
+        # Оновлюємо відсутні розміри
+        fully_updated_list = []
+        needs_update = False
+
+        for item in items_to_optimize:
+            # Перевіряємо, чи відсутній розмір
+            if item.get('size_mb') is None or item.get('size_mb') == 0.0:
+                needs_update = True
+                updated_item = update_item_size(item)
+                fully_updated_list.append(updated_item)
+            else:
+                fully_updated_list.append(item)
+
+        if needs_update:
+            items_to_optimize = fully_updated_list  # Використовуємо список з новими розмірами
 
         # Зберігаємо оновлені ваги та об'єм пам'яті в сесії
         request.session["optimization_list"] = items_to_optimize
@@ -249,7 +447,8 @@ async def optimize_content(request: Request):
                 "request": request,
                 "items": items_to_optimize,
                 "memory_size": memory_size,
-                "error": f"Помилка під час оптимізації: {e}"
+                "error": f"Помилка під час оптимізації: {e}",
+                "total_size": sum(item.get('size_mb', 0) for item in items_to_optimize)
             })
         # --- Кінець заглушки ---
 
@@ -258,5 +457,6 @@ async def optimize_content(request: Request):
             "request": request,
             "items": items_to_optimize,  # Список з оновленими вагами
             "memory_size": memory_size,
-            "optimized_results": optimized_results  # Результат заглушки
+            "optimized_results": optimized_results,  # Результат заглушки
+            "total_size": round(sum(item.get('size_mb', 0) for item in items_to_optimize), 2)
         })
