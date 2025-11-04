@@ -71,12 +71,7 @@ def get_external_content_size_mb(link: str, content_type: str) -> (float, bool):
             # Додаємо user-agent, щоб уникнути блокування 403
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'}
-            # allow_redirects=True - важливо, оскільки посилання часто є перенаправленнями
             response = requests.head(link, allow_redirects=True, timeout=5, headers=headers)
-
-            print(f"DEBUG: HEAD to {link}")
-            print(f"DEBUG: Status Code: {response.status_code}")
-            print(f"DEBUG: Headers: {response.headers}")
 
             if response.status_code == 200:
                 content_length = response.headers.get('Content-Length')
