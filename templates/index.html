@@ -154,6 +154,12 @@
             {% endif %}
         </div>
 
+        {% if convert_error %}
+            <div style="color: red; border: 1px solid red; padding: 10px; margin-bottom: 15px;">
+                <strong>Помилка конвертації:</strong> {{ convert_error }}
+            </div>
+        {% endif %}
+
         <h1>Завантажувач контенту</h1>
         <p>Введіть пошуковий запит, щоб знайти статті, відео або музику.</p>
 
