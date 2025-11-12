@@ -45,13 +45,10 @@
     .bookmark-item {
         padding: 15px; border-bottom: 1px solid #f4f4f4;
         display: flex; justify-content: space-between; align-items: center; gap: 10px;
-        /* Дозволяємо елементам розташовуватися вертикально на малих екранах */
-        flex-wrap: wrap;
     }
     .bookmark-item:last-child { border-bottom: none; }
     .bookmark-info {
         flex-grow: 1;
-        /* Гарантуємо, що блок займе принаймні X ширини, перш ніж переноситися */
         flex-basis: 300px;
     }
     .bookmark-info a {
@@ -79,7 +76,6 @@
 
     .rename-form { display: none; }
 
-    /* */
     .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
     .actions button, .actions a {
         padding: 8px 15px; border-radius: 6px; text-decoration: none;
@@ -94,8 +90,12 @@
     .tag.pdf { background-color: #e74c3c; }
     .tag.doc { background-color: #2980b9; }
     .tag.ppt { background-color: #d35400; }
-    /* */
 
+    .link-button {
+        background-color: #e67e22; padding: 8px 15px; border-radius: 6px;
+        color: white; font-size: 14px; cursor: pointer; border: none;
+        font-family: inherit;
+    }
 </style>
 {% endblock %}
 
@@ -157,35 +157,61 @@
                 <p>{{ bookmark.material.URL }}</p>
 
                 <div class="actions">
-                    {% set material = bookmark.material %}
-                    {% if material.Type == 'text' %}
+                    {% set item_url = result.link if result else material.URL %}
+                    {% set item_type = result.type if result else material.Type %}
+
+                    {% if item_type == 'text' %}
                         <form action="/convert" method="post" style="display: inline;">
-                            <input type="hidden" name="url" value="{{ material.URL }}">
+                            <input type="hidden" name="url" value="{{ item_url }}">
                             <button type="submit">Конвертувати в PDF</button>
                         </form>
                         <span class="tag text">Web-сторінка</span>
 
-                    {% elif material.Type == 'video' %}
-                        <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer">Перейти на YouTube</a>
+                    {% elif item_type == 'video' %}
+                        <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                            <input type="hidden" name="url" value="{{ item_url }}">
+                            <input type="hidden" name="type" value="{{ item_type }}">
+                            <button type="submit" class="link-button">Перейти на YouTube</button>
+                        </form>
                         <span class="tag video">Відео</span>
-                    {% elif material.Type == 'pdf' %}
-                        <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer" download>Завантажити PDF</a>
+                    {% elif item_type == 'pdf' %}
+                        <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                            <input type="hidden" name="url" value="{{ item_url }}">
+                            <input type="hidden" name="type" value="{{ item_type }}">
+                            <button type="submit" class="link-button" download>Завантажити PDF</button>
+                        </form>
                         <span class="tag pdf">PDF Документ</span>
-                    {% elif material.Type == 'doc' %}
-                        <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer" download>Завантажити DOC</a>
+                    {% elif item_type == 'doc' %}
+                        <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                            <input type="hidden" name="url" value="{{ item_url }}">
+                            <input type="hidden" name="type" value="{{ item_type }}">
+                            <button type="submit" class="link-button" download>Завантажити DOC</button>
+                        </form>
                         <span class="tag doc">DOC Документ</span>
-                    {% elif material.Type == 'ppt' %}
-                        <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer" download>Завантажити PPT</a>
+                    {% elif item_type == 'ppt' %}
+                        <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                            <input type="hidden" name="url" value="{{ item_url }}">
+                            <input type="hidden" name="type" value="{{ item_type }}">
+                            <button type="submit" class="link-button" download>Завантажити PPT</button>
+                        </form>
                         <span class="tag ppt">Презентація</span>
-                    {% elif material.Type == 'audio_yt_music' %}
-                        <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer">Слухати в YouTube Music</a>
+                    {% elif item_type == 'audio_yt_music' %}
+                        <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                            <input type="hidden" name="url" value="{{ item_url }}">
+                            <input type="hidden" name="type" value="{{ item_type }}">
+                            <button type="submit" class="link-button">Слухати в YouTube Music</button>
+                        </form>
                         <span class="tag audio">Аудіо</span>
-                    {% elif material.Type == 'audio_spotify' %}
-                        <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer">Слухати в Spotify</a>
+                    {% elif item_type == 'audio_spotify' %}
+                        <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                            <input type="hidden" name="url" value="{{ item_url }}">
+                            <input type="hidden" name="type" value="{{ item_type }}">
+                            <button type="submit" class="link-button">Слухати в Spotify</button>
+                        </form>
                         <span class="tag audio">Аудіо</span>
                     {% endif %}
                 </div>
-                </div>
+            </div>
             
             <div class="bookmark-actions">
                 <form action="/bookmarks/move" method="post">

@@ -8,6 +8,7 @@ from routers import pages, search, content, optimize
 from routers import auth
 from routers import bookmarks
 from database import Base, engine
+from routers import history
 
 # --- Створення FastAPI ---
 app = FastAPI(
@@ -61,6 +62,7 @@ async def on_shutdown():
 # --- Підключення Роутерів ---
 app.include_router(auth.router, tags=["Автентифікація"])
 app.include_router(bookmarks.router, tags=["Закладки"])
+app.include_router(history.router, tags=["Історія"])
 app.include_router(pages.router, tags=["Основні Сторінки"])
 app.include_router(search.router, tags=["Пошук"])
 app.include_router(content.router, tags=["Керування Контентом"])

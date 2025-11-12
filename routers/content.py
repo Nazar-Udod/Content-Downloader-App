@@ -1,20 +1,31 @@
 import io
 import asyncio
-from fastapi import APIRouter, Request, Form
+from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import (
     HTMLResponse, StreamingResponse, RedirectResponse, FileResponse
 )
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import templates, PDF_CACHE_DIR
+from database import get_db
+from models import User
 from services.content_utils import update_item_size, generate_pdf_for_download
+from services.auth_service import get_current_user
+from services.history_service import add_to_history
 
 router = APIRouter()
 
 
 @router.post("/convert")
-async def convert_to_pdf(request: Request, url: str = Form(...)):
+async def convert_to_pdf(
+    request: Request,
+    url: str = Form(...),
+    db: AsyncSession = Depends(get_db), # 7. Додаємо db
+    user: User | None = Depends(get_current_user) # 8. Додаємо user
+):
     """
     Конвертує URL в PDF та віддає на завантаження.
+    Якщо користувач залогінений, додає до історії.
     """
     pdf_content, filename, error = await generate_pdf_for_download(url)
 
@@ -22,6 +33,11 @@ async def convert_to_pdf(request: Request, url: str = Form(...)):
         request.session["convert_error"] = error
         return RedirectResponse(url="/", status_code=303)
 
+    if user:
+        try:
+            await add_to_history(db, user, url, "text")
+        except Exception as e:
+            print(f"ПОМИЛКА (convert history): {e}")
     return StreamingResponse(
         io.BytesIO(pdf_content),
         media_type="application/pdf",

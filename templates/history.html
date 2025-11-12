@@ -1,0 +1,136 @@
+{% extends "layout.html" %}
+
+{% block title %}Історія завантажень{% endblock %}
+
+{% block head_styles %}
+<style>
+    h1 { text-align: left; }
+    .page-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .page-nav a { text-decoration: none; color: #3498db; font-weight: 500; }
+    
+    .history-list { list-style: none; padding: 0; margin: 0; }
+    .history-item {
+        background: #fdfdfd; border: 1px solid #eef;
+        padding: 15px 20px; border-radius: 8px; margin-bottom: 15px;
+        display: flex; justify-content: space-between; align-items: center; gap: 10px;
+        flex-wrap: wrap; 
+    }
+    .history-info { flex-grow: 1; flex-basis: 400px; }
+    .history-info a {
+        font-size: 1.1em; font-weight: 600; color: #2c3e50; text-decoration: none;
+    }
+    .history-info a:hover { text-decoration: underline; }
+    .history-info .url {
+        font-size: 0.9em; color: #7f8c8d; margin: 4px 0 0 0;
+        word-break: break-all;
+    }
+    .history-info .date {
+        font-size: 0.9em; color: #333; margin-top: 10px; font-weight: 500;
+    }
+
+    .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .actions button, .actions a {
+        padding: 8px 15px; border-radius: 6px; text-decoration: none;
+        color: white; font-size: 14px; cursor: pointer;
+    }
+    .actions button { background-color: #27ae60; border: none; }
+    .actions a { background-color: #e67e22; }
+    .tag { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 12px; color: white; margin-left: 10px; }
+    .tag.text { background-color: #3498db; }
+    .tag.video { background-color: #c0392b; }
+    .tag.audio { background-color: #8e44ad; }
+    .tag.pdf { background-color: #e74c3c; }
+    .tag.doc { background-color: #2980b9; }
+    .tag.ppt { background-color: #d35400; }
+
+    .link-button {
+        background-color: #e67e22; padding: 8px 15px; border-radius: 6px;
+        color: white; font-size: 14px; cursor: pointer; border: none;
+        font-family: inherit;
+    }
+    .link-button:hover {
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-nav">
+    <a href="/">← Повернутися до пошуку</a>
+</div>
+
+<h1>Історія завантажень</h1>
+
+{% if not history_items %}
+    <p>Ваша історія порожня.</p>
+{% endif %}
+
+<ul class="history-list">
+    {% for item in history_items %}
+    {% set material = item.material %}
+    <li class="history-item">
+        <div class="history-info">
+            <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer">
+                {{ material.Type }} {{ material.URL }}
+            </a>
+            <p class="url">{{ material.URL }}</p>
+            <p class="date">Дата: {{ item.LoadDate.strftime('%Y-%m-%d %H:%M') }}</p>
+        </div>
+        
+        <div class="actions">
+            {% if material.Type == 'text' %}
+                <form action="/convert" method="post" style="display: inline;">
+                    <input type="hidden" name="url" value="{{ material.URL }}">
+                    <button type="submit">Конвертувати в PDF</button>
+                </form>
+                <span class="tag text">Web-сторінка</span>
+            
+            {% elif material.Type == 'video' %}
+                <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                    <input type="hidden" name="url" value="{{ material.URL }}">
+                    <input type="hidden" name="type" value="{{ material.Type }}">
+                    <button type="submit" class="link-button">Перейти на YouTube</button>
+                </form>
+                <span class="tag video">Відео</span>
+            {% elif material.Type == 'pdf' %}
+                <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                    <input type="hidden" name="url" value="{{ material.URL }}">
+                    <input type="hidden" name="type" value="{{ material.Type }}">
+                    <button type="submit" class="link-button">Завантажити PDF</button>
+                </form>
+                <span class="tag pdf">PDF Документ</span>
+            {% elif material.Type == 'doc' %}
+                <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                    <input type="hidden" name="url" value="{{ material.URL }}">
+                    <input type="hidden" name="type" value="{{ material.Type }}">
+                    <button type="submit" class="link-button">Завантажити DOC</button>
+                </form>
+                <span class="tag doc">DOC Документ</span>
+            {% elif material.Type == 'ppt' %}
+                <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                    <input type="hidden" name="url" value="{{ material.URL }}">
+                    <input type="hidden" name="type" value="{{ material.Type }}">
+                    <button type="submit" class="link-button">Завантажити PPT</button>
+                </form>
+                <span class="tag ppt">Презентація</span>
+            {% elif material.Type == 'audio_yt_music' %}
+                <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                    <input type="hidden" name="url" value="{{ material.URL }}">
+                    <input type="hidden" name="type" value="{{ material.Type }}">
+                    <button type="submit" class="link-button">Слухати в YouTube Music</button>
+                </form>
+                <span class="tag audio">Аудіо</span>
+            {% elif material.Type == 'audio_spotify' %}
+                <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                    <input type="hidden" name="url" value="{{ material.URL }}">
+                    <input type="hidden" name="type" value="{{ material.Type }}">
+                    <button type="submit" class="link-button">Слухати в Spotify</button>
+                </form>
+                <span class="tag audio">Аудіо</span>
+            {% endif %}
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+
+{% endblock %}
