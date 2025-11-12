@@ -5,5 +5,5 @@ jinja2
 serpapi
 python-dotenv
 requests
-pytube
+yt-dlp
 playwright

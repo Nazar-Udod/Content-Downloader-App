@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 from dotenv import load_dotenv
 from starlette.middleware.sessions import SessionMiddleware
 import requests
-from pytube import YouTube
+import yt_dlp
 import hashlib
 from pathlib import Path
 
@@ -111,18 +111,109 @@ def get_external_content_size_mb(link: str, content_type: str) -> (float, bool):
                     return round(int(content_length) / (1024 * 1024), 2), False
             return ESTIMATED_PDF_MB, True
 
+
         elif content_type == 'video':
-            yt = YouTube(link)
-            stream = yt.streams.filter(progressive=True, file_extension='mp4').get_highest_resolution()
-            if stream:
-                return round(stream.filesize / (1024 * 1024), 2), False
+
+            ydl_opts = {
+
+                'quiet': True,
+
+                'no_warnings': True,
+
+            }
+
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+
+
+                info = ydl.extract_info(link, download=False)
+
+                formats = info.get('formats', [])
+
+                video_size = 0
+
+                audio_size = 0
+
+                video_streams = [
+
+                    f for f in formats
+
+                    if f.get('vcodec') != 'none' and f.get('acodec') == 'none' and (
+                                f.get('filesize') or f.get('filesize_approx'))
+
+                ]
+
+                if video_streams:
+                    # Пріоритет за_висотою кадру
+
+                    best_video_stream = max(video_streams, key=lambda f: f.get('height', 0))
+
+                    video_size = best_video_stream.get('filesize') or best_video_stream.get('filesize_approx')
+
+                audio_streams = [
+
+                    f for f in formats
+
+                    if f.get('acodec') != 'none' and f.get('vcodec') == 'none' and (
+                                f.get('filesize') or f.get('filesize_approx'))
+
+                ]
+
+                if audio_streams:
+                    # Пріоритет за_аудіо бітрейтом (abr)
+
+                    best_audio_stream = max(audio_streams, key=lambda f: f.get('abr', 0))
+
+                    audio_size = best_audio_stream.get('filesize') or best_audio_stream.get('filesize_approx')
+
+
+                if video_size > 0 and audio_size > 0:
+                    total_size_bytes = video_size + audio_size
+
+                    return round(total_size_bytes / (1024 * 1024), 2), False
+
+
+                progressive_streams = [
+
+                    f for f in formats
+
+                    if f.get('vcodec') != 'none' and f.get('acodec') != 'none' and (
+                                f.get('filesize') or f.get('filesize_approx'))
+
+                ]
+
+                if progressive_streams:
+
+                    best_prog_stream = max(progressive_streams, key=lambda f: f.get('height', 0))
+
+                    prog_size = best_prog_stream.get('filesize') or best_prog_stream.get('filesize_approx')
+
+                    if prog_size:
+                        return round(prog_size / (1024 * 1024), 2), False
+
             return ESTIMATED_VIDEO_MB, True
 
+
         elif content_type == 'audio_yt_music':
-            yt = YouTube(link)
-            stream = yt.streams.get_audio_only()
-            if stream:
-                return round(stream.filesize / (1024 * 1024), 2), False
+
+            ydl_opts = {
+
+                'format': 'bestaudio/best',
+
+                'quiet': True,
+
+                'no_warnings': True,
+
+            }
+
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+
+                info = ydl.extract_info(link, download=False)
+
+                filesize = info.get('filesize') or info.get('filesize_approx')
+
+                if filesize:
+                    return round(filesize / (1024 * 1024), 2), False
+
             return ESTIMATED_AUDIO_MB, True
 
     except Exception as e:
