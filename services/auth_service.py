@@ -1,8 +1,11 @@
+from fastapi import Request, Depends, HTTPException, status
+from fastapi.responses import RedirectResponse
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models import User
 from schemas import UserCreate
+from database import get_db
 
 # Налаштовуємо bcrypt
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -28,3 +31,32 @@ async def create_user(db: AsyncSession, user: UserCreate) -> User:
     await db.commit()
     await db.refresh(db_user)
     return db_user
+
+async def get_current_user(
+        request: Request,
+        db: AsyncSession = Depends(get_db)
+) -> User | None:
+    """
+    Залежність: Отримує email з сесії та повертає об'єкт User з БД.
+    Якщо користувача немає, повертає None.
+    """
+    email = request.session.get("user_email")
+    if not email:
+        return None
+
+    user = await get_user_by_email(db, email)
+    return user
+
+async def get_required_user(user: User | None = Depends(get_current_user)) -> User:
+    """
+    Залежність: Вимагає, щоб користувач був залогінений.
+    Якщо ні - перенаправляє на сторінку /login.
+    """
+    if not user:
+        # 307 - Temporary Redirect, каже браузеру повторити той самий POST/GET запит
+        # на нову адресу (тобто на /login)
+        raise HTTPException(
+            status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+            headers={"Location": "/login"}
+        )
+    return user

@@ -54,6 +54,42 @@
         border-radius: 8px; cursor: pointer; margin-top: 30px; transition: background-color 0.3s;
     }
     .add-button:hover { background-color: #2980b9; }
+
+    .bookmark-form {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px dashed #e0e6ed;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .bookmark-form input[type="text"] {
+        flex: 1 1 200px;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+    .bookmark-form select {
+        flex: 1 1 150px;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        background-color: #fff;
+    }
+    .bookmark-form button {
+        flex: 0 0 auto;
+        padding: 8px 15px;
+        font-size: 14px;
+        font-weight: 500;
+        background-color: #5d6d7e;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
 </style>
 {% endblock %}
 
@@ -80,14 +116,15 @@
     {% if query and not results and not error %}
         <div class="info">Нічого не знайдено за запитом "{{ query }}". Спробуйте інший.</div>
     {% endif %}
-
     {% if results %}
         <h2>Результати пошуку для "{{ query }}"</h2>
 
         <form id="results-form" method="post">
             <div class="results-container">
+
             {% for result in results %}
                 <div class="result-item">
+
                     <h3>
                         <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">{{ result.title }}</a>
                     </h3>
@@ -120,7 +157,32 @@
                         <span class="tag audio">Аудіо</span>
                     {% endif %}
                     </div>
+                    {% if user_email and folders %}
+                    <div class="bookmark-form">
+                        <input type="hidden" name="url_{{ loop.index0 }}" value="{{ result.link }}">
+                        <input type="hidden" name="type_{{ loop.index0 }}" value="{{ result.type }}">
 
+                        <label for="bm-name-{{ loop.index0 }}" style="display: none;">Назва:</label>
+                        <input type="text" name="name_{{ loop.index0 }}" id="bm-name-{{ loop.index0 }}"
+                               value="{{ result.title }}" required
+                               title="Назва закладки">
+
+                        <label for="bm-folder-{{ loop.index0 }}" style="display: none;">Папка:</label>
+                        <select name="folder_id_{{ loop.index0 }}" id="bm-folder-{{ loop.index0 }}" title="Обрати папку">
+                            {% for folder in folders %}
+                            <option value="{{ folder.FolderID }}">{{ folder.Name }}</option>
+                            {% endfor %}
+                        </select>
+
+                        <button type="submit"
+                                name="bookmark_index"
+                                value="{{ loop.index0 }}"
+                                formaction="/bookmarks/add"
+                                formmethod="post">
+                            Додати в закладки
+                        </button>
+                    </div>
+                    {% endif %}
                     <div class="selection-controls">
                         <label>
                             <input type="checkbox" name="selected_indices" value="{{ loop.index0 }}">
@@ -136,7 +198,6 @@
                         <input type="hidden" name="snippet_{{ loop.index0 }}" value="{{ result.snippet | escape }}">
                         <input type="hidden" name="type_{{ loop.index0 }}" value="{{ result.type }}">
                     </div>
-
                 </div>
             {% endfor %}
             </div>

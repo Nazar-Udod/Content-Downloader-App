@@ -6,6 +6,7 @@ from config import templates
 from database import get_db
 from schemas import UserCreate, UserLogin
 from services.auth_service import get_user_by_email, create_user, verify_password
+from services.bookmark_service import create_default_folder
 
 router = APIRouter(tags=["Автентифікація"])
 
@@ -28,6 +29,7 @@ async def register_page(request: Request):
 async def logout(request: Request):
     """Видаляє користувача з сесії."""
     request.session.pop("user_email", None)
+    request.session.pop("optimization_list", None)
     return RedirectResponse(url="/", status_code=303)
 
 
@@ -80,6 +82,9 @@ async def register_submit(request: Request, db: AsyncSession = Depends(get_db)):
 
     user = await create_user(db, user_data)
 
+    # Створюємо стандартну папку для закладок
+    await create_default_folder(db, user)
+    
     # Автоматично логінимо користувача
     request.session["user_email"] = user.Email
 

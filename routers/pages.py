@@ -1,24 +1,46 @@
-from fastapi import APIRouter, Request, Form
+from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import templates
+from database import get_db
+from services.auth_service import get_user_by_email
+from services.bookmark_service import get_user_folders
 
 router = APIRouter()
 
 
 @router.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
+async def read_root(
+        request: Request,
+        db: AsyncSession = Depends(get_db)
+):
     """
     Головна сторінка, яка відображає форму пошуку.
     """
     optimization_list = request.session.get("optimization_list", [])
     convert_error = request.session.pop("convert_error", None)
+    user_email = request.session.get("user_email")
+
+    folders = []
+    if user_email:
+        user = await get_user_by_email(db, user_email)
+        if user:
+            folders = await get_user_folders(db, user)
+
+    results = request.session.pop("search_results", None)
+    query = request.session.pop("search_query", None)
+    error = request.session.pop("search_error", None)
 
     return templates.TemplateResponse("index.html", {
         "request": request,
         "optimization_count": len(optimization_list),
         "convert_error": convert_error,
-        "user_email": request.session.get("user_email")
+        "user_email": user_email,
+        "folders": folders,
+        "results": results,
+        "query": query,
+        "error": error
     })
 
 

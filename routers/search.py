@@ -1,32 +1,33 @@
 import serpapi
-from fastapi import APIRouter, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Request, Form, Depends
+from fastapi.responses import RedirectResponse  # <-- Змінено
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import templates, SERPAPI_API_KEY
+from config import SERPAPI_API_KEY
+from database import get_db
 
 router = APIRouter()
 
 
-@router.post("/search", response_class=HTMLResponse)
-async def search_content(request: Request, query: str = Form(...)):
+@router.post("/search")
+async def search_content(
+        request: Request,
+        query: str = Form(...),
+):
     """
-    Обробляє пошуковий запит.
+    Обробляє пошуковий запит, зберігає результати в сесію
+    і перенаправляє на головну сторінку.
     """
-    optimization_list = request.session.get("optimization_list", [])
-    base_context = {
-        "request": request,
-        "optimization_count": len(optimization_list),
-        "user_email": request.session.get("user_email"),
-        "query": query
-    }
+
+    # Очищуємо старі результати
+    request.session.pop("search_results", None)
+    request.session.pop("search_query", None)
+    request.session.pop("search_error", None)
 
     if not SERPAPI_API_KEY:
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "error": "Ключ Serp API не налаштовано..."
-        })
+        request.session["search_error"] = "Ключ Serp API не налаштовано..."
+        return RedirectResponse(url="/", status_code=303)
 
-    optimization_list = request.session.get("optimization_list", [])
     client = serpapi.Client()
 
     try:
@@ -38,7 +39,6 @@ async def search_content(request: Request, query: str = Form(...)):
                 title = result.get('title', '')
                 if not link or not title: continue
 
-                # (Логіка визначення типу залишається такою ж)
                 result_type = 'text'
                 if link.endswith('.pdf') or title.startswith('[PDF]'):
                     result_type = 'pdf'
@@ -58,9 +58,14 @@ async def search_content(request: Request, query: str = Form(...)):
                     'snippet': result.get('snippet', ''), 'type': result_type
                 })
 
-        base_context["results"] = processed_results
-        return templates.TemplateResponse("index.html", base_context)
+        # Зберігаємо результати в сесію
+        request.session["search_results"] = processed_results
+        request.session["search_query"] = query
 
     except Exception as e:
-        base_context["error"] = f"Виникла помилка під час пошуку: {e}"
-        return templates.TemplateResponse("index.html", base_context)
+        # Зберігаємо помилку в сесію
+        request.session["search_error"] = f"Виникла помилка під час пошуку: {e}"
+        request.session["search_query"] = query
+
+    # Перенаправляємо користувача на головну сторінку (GET /)
+    return RedirectResponse(url="/", status_code=303)

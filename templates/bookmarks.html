@@ -1,0 +1,215 @@
+{% extends "layout.html" %}
+
+{% block title %}Мої закладки{% endblock %}
+
+{% block head_styles %}
+<style>
+    h1, h2 { text-align: left; }
+    h2 { margin-top: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    .page-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .page-nav a { text-decoration: none; color: #3498db; font-weight: 500; }
+    
+    .new-folder-form {
+        background: #f8f9fa; padding: 20px; border-radius: 8px;
+        display: flex; gap: 10px; margin-bottom: 30px;
+    }
+    .new-folder-form input[type="text"] {
+        flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px;
+    }
+    .new-folder-form button {
+        padding: 10px 20px; background-color: #27ae60; color: white;
+        border: none; border-radius: 5px; cursor: pointer; font-size: 16px;
+    }
+    
+    .folder-item {
+        margin-bottom: 25px;
+    }
+    .folder-header {
+        display: flex; justify-content: space-between; align-items: center;
+        background: #eaf5ff; padding: 10px 15px; border-radius: 8px 8px 0 0;
+    }
+    .folder-header h3 { margin: 0; color: #0056b3; }
+    .folder-actions { display: flex; gap: 10px; }
+    .folder-actions button {
+        background: none; border: none; cursor: pointer; font-size: 14px;
+        font-weight: 500;
+    }
+    .folder-actions .rename-btn { color: #2980b9; }
+    .folder-actions .delete-btn { color: #e74c3c; }
+    
+    .bookmark-list {
+        list-style: none; padding: 0; margin: 0;
+        border: 1px solid #eaf5ff; border-top: none;
+        border-radius: 0 0 8px 8px;
+    }
+    .bookmark-item {
+        padding: 15px; border-bottom: 1px solid #f4f4f4;
+        display: flex; justify-content: space-between; align-items: center; gap: 10px;
+        /* Дозволяємо елементам розташовуватися вертикально на малих екранах */
+        flex-wrap: wrap;
+    }
+    .bookmark-item:last-child { border-bottom: none; }
+    .bookmark-info {
+        flex-grow: 1;
+        /* Гарантуємо, що блок займе принаймні X ширини, перш ніж переноситися */
+        flex-basis: 300px;
+    }
+    .bookmark-info a {
+        font-size: 1.1em; font-weight: 600; color: #2c3e50; text-decoration: none;
+    }
+    .bookmark-info a:hover { text-decoration: underline; }
+    .bookmark-info p {
+        font-size: 0.9em; color: #7f8c8d; margin: 4px 0 0 0;
+        word-break: break-all;
+    }
+    .bookmark-actions {
+        display: flex; gap: 8px;
+        flex-basis: 300px; /* Допомагає з вирівнюванням при перенесенні */
+        flex-wrap: wrap; /* Дозволяє кнопкам переноситися */
+    }
+    .bookmark-actions select {
+        padding: 5px; border: 1px solid #ccc; border-radius: 5px;
+    }
+    .bookmark-actions button {
+        padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer;
+        color: white; font-size: 14px;
+    }
+    .bookmark-actions .move-btn { background-color: #3498db; }
+    .bookmark-actions .delete-btn { background-color: #e74c3c; }
+
+    .rename-form { display: none; }
+
+    /* */
+    .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+    .actions button, .actions a {
+        padding: 8px 15px; border-radius: 6px; text-decoration: none;
+        color: white; font-size: 14px; cursor: pointer;
+    }
+    .actions button { background-color: #27ae60; border: none; }
+    .actions a { background-color: #e67e22; }
+    .tag { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 12px; color: white; margin-left: 10px; }
+    .tag.text { background-color: #3498db; }
+    .tag.video { background-color: #c0392b; }
+    .tag.audio { background-color: #8e44ad; }
+    .tag.pdf { background-color: #e74c3c; }
+    .tag.doc { background-color: #2980b9; }
+    .tag.ppt { background-color: #d35400; }
+    /* */
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-nav">
+    <a href="/">← Повернутися до пошуку</a>
+</div>
+
+<h1>Мої закладки</h1>
+
+<h2>Створити нову папку</h2>
+<form action="/bookmarks/folder/create" method="post" class="new-folder-form">
+    <input type="text" name="name" placeholder="Назва папки" required>
+    <button type="submit">Створити</button>
+</form>
+
+{% if not folders %}
+    <p>У вас ще немає папок. Створіть одну!</p>
+{% endif %}
+
+{% for folder in folders %}
+<div class="folder-item">
+    <div class="folder-header">
+        <h3>{{ folder.Name }}</h3>
+
+        <div classs="folder-actions">
+            <form action="/bookmarks/folder/rename" method="post" class="rename-form" id="rename-form-{{ folder.FolderID }}" style="display: none;">
+                <input type="hidden" name="folder_id" value="{{ folder.FolderID }}">
+                <input type="text" name="new_name" value="{{ folder.Name }}" required>
+                <button type="submit" class="rename-btn">Зберегти</button>
+            </form>
+
+            <button type="button" class="rename-btn"
+                    onclick="document.getElementById('rename-form-{{ folder.FolderID }}').style.display='flex'">
+                Перейменувати
+            </button>
+
+            {% if folder.Name != 'Мої закладки' %}
+            <form action="/bookmarks/folder/delete" method="post" style="display: inline;"
+                  onsubmit="return confirm('Ви впевнені, що хочете видалити папку «{{ folder.Name }}»? Всі закладки в ній будуть видалені.')">
+                <input type="hidden" name="folder_id" value="{{ folder.FolderID }}">
+                <button type="submit" class="delete-btn">Видалити</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <ul class="bookmark-list">
+        {% if not folder.bookmarks %}
+        <li class="bookmark-item"><p style="color: #7f8c8d;">Папка порожня</p></li>
+        {% endif %}
+
+        {% for bookmark in folder.bookmarks %}
+        <li class="bookmark-item">
+            <div class="bookmark-info">
+                <a href="{{ bookmark.material.URL }}" target="_blank" rel="noopener noreferrer">
+                    {{ bookmark.Name }}
+                </a>
+                <p>{{ bookmark.material.URL }}</p>
+
+                <div class="actions">
+                    {% set material = bookmark.material %}
+                    {% if material.Type == 'text' %}
+                        <form action="/convert" method="post" style="display: inline;">
+                            <input type="hidden" name="url" value="{{ material.URL }}">
+                            <button type="submit">Конвертувати в PDF</button>
+                        </form>
+                        <span class="tag text">Web-сторінка</span>
+
+                    {% elif material.Type == 'video' %}
+                        <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer">Перейти на YouTube</a>
+                        <span class="tag video">Відео</span>
+                    {% elif material.Type == 'pdf' %}
+                        <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer" download>Завантажити PDF</a>
+                        <span class="tag pdf">PDF Документ</span>
+                    {% elif material.Type == 'doc' %}
+                        <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer" download>Завантажити DOC</a>
+                        <span class="tag doc">DOC Документ</span>
+                    {% elif material.Type == 'ppt' %}
+                        <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer" download>Завантажити PPT</a>
+                        <span class="tag ppt">Презентація</span>
+                    {% elif material.Type == 'audio_yt_music' %}
+                        <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer">Слухати в YouTube Music</a>
+                        <span class="tag audio">Аудіо</span>
+                    {% elif material.Type == 'audio_spotify' %}
+                        <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer">Слухати в Spotify</a>
+                        <span class="tag audio">Аудіо</span>
+                    {% endif %}
+                </div>
+                </div>
+            
+            <div class="bookmark-actions">
+                <form action="/bookmarks/move" method="post">
+                    <input type="hidden" name="bookmark_id" value="{{ bookmark.BookmarkID }}">
+                    <select name="new_folder_id">
+                        {% for f in folders %}
+                            {% if f.FolderID != folder.FolderID %}
+                            <option value="{{ f.FolderID }}">{{ f.Name }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="move-btn">Перемістити</button>
+                </form>
+                
+                <form action="/bookmarks/delete" method="post" 
+                      onsubmit="return confirm('Видалити закладку «{{ bookmark.Name }}»?')">
+                    <input type="hidden" name="bookmark_id" value="{{ bookmark.BookmarkID }}">
+                    <button type="submit" class="delete-btn">Видалити</button>
+                </form>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endfor %}
+
+{% endblock %}

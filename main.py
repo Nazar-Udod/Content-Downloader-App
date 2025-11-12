@@ -6,6 +6,7 @@ from config import APP_SECRET_KEY, PDF_CACHE_DIR
 from services.browser_manager import start_browser, stop_browser
 from routers import pages, search, content, optimize
 from routers import auth
+from routers import bookmarks
 from database import Base, engine
 
 # --- Створення FastAPI ---
@@ -26,7 +27,7 @@ app.add_middleware(
 
 # --- Події життєвого циклу ---
 
-app.on_event("startup")
+@app.on_event("startup")
 
 
 async def on_startup():
@@ -59,6 +60,7 @@ async def on_shutdown():
 
 # --- Підключення Роутерів ---
 app.include_router(auth.router, tags=["Автентифікація"])
+app.include_router(bookmarks.router, tags=["Закладки"])
 app.include_router(pages.router, tags=["Основні Сторінки"])
 app.include_router(search.router, tags=["Пошук"])
 app.include_router(content.router, tags=["Керування Контентом"])
