@@ -7,3 +7,9 @@ python-dotenv
 requests
 yt-dlp
 playwright
+sqlalchemy[asyncio]
+aioodbc
+passlib[bcrypt]==1.7.4
+aioodbc
+pydantic[email]
+itsdangerous

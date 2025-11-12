@@ -5,6 +5,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from config import APP_SECRET_KEY, PDF_CACHE_DIR
 from services.browser_manager import start_browser, stop_browser
 from routers import pages, search, content, optimize
+from routers import auth
+from database import Base, engine
 
 # --- Створення FastAPI ---
 app = FastAPI(
@@ -24,16 +26,26 @@ app.add_middleware(
 
 # --- Події життєвого циклу ---
 
-@app.on_event("startup")
+app.on_event("startup")
+
+
 async def on_startup():
     """
     При старті сервера:
     1. Створюємо папку кешу.
     2. Запускаємо Playwright/браузер.
+    3. Створюємо таблиці в БД (якщо їх немає).
     """
+    # 3. Створення таблиць
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        print("Таблиці бази даних перевірено/створено.")
+
+    # 1. Папка кешу
     PDF_CACHE_DIR.mkdir(exist_ok=True)
     print(f"Папка кешу PDF знаходиться тут: {PDF_CACHE_DIR.resolve()}")
 
+    # 2. Браузер
     await start_browser()
 
 
@@ -46,6 +58,7 @@ async def on_shutdown():
 
 
 # --- Підключення Роутерів ---
+app.include_router(auth.router, tags=["Автентифікація"])
 app.include_router(pages.router, tags=["Основні Сторінки"])
 app.include_router(search.router, tags=["Пошук"])
 app.include_router(content.router, tags=["Керування Контентом"])

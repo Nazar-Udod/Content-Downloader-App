@@ -12,6 +12,14 @@ async def search_content(request: Request, query: str = Form(...)):
     """
     Обробляє пошуковий запит.
     """
+    optimization_list = request.session.get("optimization_list", [])
+    base_context = {
+        "request": request,
+        "optimization_count": len(optimization_list),
+        "user_email": request.session.get("user_email"),
+        "query": query
+    }
+
     if not SERPAPI_API_KEY:
         return templates.TemplateResponse("index.html", {
             "request": request,
@@ -50,13 +58,9 @@ async def search_content(request: Request, query: str = Form(...)):
                     'snippet': result.get('snippet', ''), 'type': result_type
                 })
 
-        return templates.TemplateResponse("index.html", {
-            "request": request, "results": processed_results, "query": query,
-            "optimization_count": len(optimization_list)
-        })
+        base_context["results"] = processed_results
+        return templates.TemplateResponse("index.html", base_context)
 
     except Exception as e:
-        return templates.TemplateResponse("index.html", {
-            "request": request, "error": f"Виникла помилка під час пошуку: {e}",
-            "optimization_count": len(optimization_list)
-        })
+        base_context["error"] = f"Виникла помилка під час пошуку: {e}"
+        return templates.TemplateResponse("index.html", base_context)

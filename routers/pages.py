@@ -17,7 +17,8 @@ async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {
         "request": request,
         "optimization_count": len(optimization_list),
-        "convert_error": convert_error
+        "convert_error": convert_error,
+        "user_email": request.session.get("user_email")
     })
 
 
@@ -63,7 +64,9 @@ async def get_optimization_list(request: Request):
         "request": request,
         "items": items,
         "memory_size": request.session.get("memory_size", 1000),
-        "total_size": round(total_size, 2)
+        "total_size": round(total_size, 2),
+        "user_email": request.session.get("user_email"),
+        "optimization_count": len(items)
     })
 
 
@@ -74,4 +77,5 @@ async def clear_list(request: Request):
     """
     request.session["optimization_list"] = []
     request.session["memory_size"] = 1000
+
     return RedirectResponse(url="/", status_code=303)

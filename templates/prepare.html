@@ -1,222 +1,197 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Оптимізація контенту</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f4f7f9; color: #333; line-height: 1.6; margin: 0; padding: 20px;
-        }
-        .container {
-            max-width: 800px; margin: 0 auto; background: #fff; padding: 25px 30px;
-            border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-        }
-        h1, h2 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
-        .result-item {
-            background-color: #fdfdfd; border: 1px solid #eef; padding: 20px;
-            border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-        .result-item h3 { margin-top: 0; color: #2980b9; }
-        .result-item a { color: #2980b9; text-decoration: none; }
-        .result-item p { margin-bottom: 15px; }
-        .result-item .link { font-size: 0.9em; color: #555; word-break: break-all; }
-        .error, .info {
-            text-align: center; padding: 15px; border-radius: 8px; margin-top: 20px;
-        }
-        .error { background-color: #e74c3c; color: white; }
-        .info { background-color: #f39c12; color: white; }
-        .config-form {
-            background-color: #f8f9fa; border: 1px solid #e0e6ed; padding: 25px;
-            border-radius: 8px; margin-bottom: 30px;
-        }
-        .config-form label {
-            font-weight: 600; font-size: 18px; display: block; margin-bottom: 10px;
-        }
-        .config-form input[type="number"] {
-            width: 150px; padding: 10px 15px; border: 1px solid #ccc;
-            border-radius: 5px; font-size: 16px;
-        }
-        .config-form button {
-            display: block; width: 100%; padding: 15px; font-size: 18px; font-weight: 600;
-            color: white; background-color: #e67e22; border: none;
-            border-radius: 8px; cursor: pointer; margin-top: 20px;
-        }
-        .weight-input {
-            width: 60px; padding: 5px 8px; border: 1px solid #ccc;
-            border-radius: 5px; font-size: 14px;
-        }
-        .optimization-results {
-            margin-top: 30px; border-top: 2px solid #3498db; padding-top: 20px;
-        }
-        .page-nav {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
-        }
-        .page-nav a { text-decoration: none; color: #3498db; font-weight: 500; }
-        .page-nav a.clear-link { color: #e74c3c; }
-        .size-info {
-            font-weight: 600; color: #333; background-color: #e9ecef;
-            padding: 3px 8px; border-radius: 5px; font-size: 14px;
-        }
-        .size-info.estimated { background-color: #fff3cd; color: #856404; }
-        .size-info.unknown { background-color: #f8d7da; color: #721c24; }
-        .fetch-button {
-            display: block; width: 100%; padding: 12px; font-size: 16px; font-weight: 600;
-            color: white; background-color: #3498db; border: none;
-            border-radius: 8px; cursor: pointer; margin-bottom: 20px;
-            transition: background-color 0.3s;
-        }
-        .fetch-button:hover { background-color: #2980b9; }
-        .total-size-bar {
-            background-color: #e9ecef; border-radius: 8px; padding: 15px;
-            text-align: center; font-size: 1.1em; font-weight: 600;
-            margin: 10px 0 20px 0;
-        }
-        .download-pdf-btn {
-            padding: 5px 12px;
-            font-size: 14px;
-            background-color: #27ae60;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: 500;
-            margin-left: 15px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
+{% extends "layout.html" %}
 
-        <div class="page-nav">
-            <a href="/">← Повернутися до пошуку</a>
-            {% if items %}
-            <a href="/clear-list" class="clear-link"
-               onclick="return confirm('Ви впевнені, що хочете очистити список?')">
-                Очистити список
-            </a>
-            {% endif %}
+{% block title %}Оптимізація контенту{% endblock %}
+
+{% block head_styles %}
+<style>
+    h2 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
+    .result-item {
+        background-color: #fdfdfd; border: 1px solid #eef; padding: 20px;
+        border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+    .result-item h3 { margin-top: 0; color: #2980b9; }
+    .result-item a { color: #2980b9; text-decoration: none; }
+    .result-item p { margin-bottom: 15px; }
+    .result-item .link { font-size: 0.9em; color: #555; word-break: break-all; }
+    .info { background-color: #f39c12; color: white; }
+    
+    .config-form {
+        background-color: #f8f9fa; border: 1px solid #e0e6ed; padding: 25px;
+        border-radius: 8px; margin-bottom: 30px;
+    }
+    .config-form label {
+        font-weight: 600; font-size: 18px; display: block; margin-bottom: 10px;
+    }
+    .config-form input[type="number"] {
+        width: 150px; padding: 10px 15px; border: 1px solid #ccc;
+        border-radius: 5px; font-size: 16px;
+    }
+    .config-form button {
+        display: block; width: 100%; padding: 15px; font-size: 18px; font-weight: 600;
+        color: white; background-color: #e67e22; border: none;
+        border-radius: 8px; cursor: pointer; margin-top: 20px;
+    }
+    .weight-input {
+        width: 60px; padding: 5px 8px; border: 1px solid #ccc;
+        border-radius: 5px; font-size: 14px;
+    }
+    .optimization-results {
+        margin-top: 30px; border-top: 2px solid #3498db; padding-top: 20px;
+    }
+    .page-nav {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+    }
+    .page-nav a { text-decoration: none; color: #3498db; font-weight: 500; }
+    
+    .size-info {
+        font-weight: 600; color: #333; background-color: #e9ecef;
+        padding: 3px 8px; border-radius: 5px; font-size: 14px;
+    }
+    .size-info.estimated { background-color: #fff3cd; color: #856404; }
+    .size-info.unknown { background-color: #f8d7da; color: #721c24; }
+    .fetch-button {
+        display: block; width: 100%; padding: 12px; font-size: 16px; font-weight: 600;
+        color: white; background-color: #3498db; border: none;
+        border-radius: 8px; cursor: pointer; margin-bottom: 20px;
+        transition: background-color 0.3s;
+    }
+    .fetch-button:hover { background-color: #2980b9; }
+    .total-size-bar {
+        background-color: #e9ecef; border-radius: 8px; padding: 15px;
+        text-align: center; font-size: 1.1em; font-weight: 600;
+        margin: 10px 0 20px 0;
+    }
+    .download-pdf-btn {
+        padding: 5px 12px; font-size: 14px; background-color: #27ae60;
+        color: white; text-decoration: none; border-radius: 5px;
+        font-weight: 500; margin-left: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="page-nav">
+        <a href="/">← Повернутися до пошуку</a>
+    </div>
+
+    <h1>Налаштування оптимізації</h1>
+
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
+    {% if not items %}
+        <div class="info">Ваш список для оптимізації порожній.</div>
+    {% endif %}
+
+    {% if items %}
+
+    <form action="/fetch-sizes" method="post">
+        <button type="submit" class="fetch-button">
+            Отримати / Оновити розміри
+        </button>
+    </form>
+
+    <form class="config-form" action="/optimize" method="post">
+
+        <h2>1. Перевірте ваги та розміри</h2>
+
+        {% if total_size > 0 %}
+        <div class="total-size-bar">
+            Загальний розмір обраних: {{ total_size }} MB
         </div>
-
-        <h1>Налаштування оптимізації</h1>
-
-        {% if error %}
-            <div class="error">{{ error }}</div>
         {% endif %}
 
-        {% if not items %}
-            <div class="info">Ваш список для оптимізації порожній.</div>
-        {% endif %}
+        {% for item in items %}
+        <div class="result-item">
+            <h3>
+                {{ item.title }}
 
-        {% if items %}
+                {% if item.type == 'text' and item.cache_file %}
+                <a href="/download-pdf/{{ item.cache_file }}" class="download-pdf-btn" target="_blank">
+                    Завантажити PDF
+                </a>
+                {% endif %}
+            </h3>
+            <p class="link">{{ item.link }}</p>
 
-        <form action="/fetch-sizes" method="post">
-            <button type="submit" class="fetch-button">
-                Отримати / Оновити розміри
-            </button>
-        </form>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <label>
+                    Вага (пріоритет):
+                    <input type="number" name="weight_{{ loop.index0 }}" class="weight-input" min="1" max="10" value="{{ item.weight }}">
+                </label>
 
-        <form class="config-form" action="/optimize" method="post">
-
-            <h2>1. Перевірте ваги та розміри</h2>
-
-            {% if total_size > 0 %}
-            <div class="total-size-bar">
-                Загальний розмір обраних: {{ total_size }} MB
+                {% if item.size_mb is not none %}
+                    <span class="size-info {% if item.is_estimated %}estimated{% endif %}">
+                        Розмір: {{ item.size_mb }} MB
+                        {% if item.is_estimated %}(Оцінка){% endif %}
+                    </span>
+                {% else %}
+                    <span class="size-info unknown">
+                        Розмір невідомий
+                    </span>
+                {% endif %}
             </div>
+
+            <input type="hidden" name="title_{{ loop.index0 }}" value="{{ item.title }}">
+            <input type="hidden" name="link_{{ loop.index0 }}" value="{{ item.link }}">
+            <input type="hidden" name="snippet_{{ loop.index0 }}" value="{{ item.snippet | escape }}">
+            <input type="hidden" name="type_{{ loop.index0 }}" value="{{ item.type }}">
+            <input type="hidden" name="size_mb_{{ loop.index0 }}" value="{{ item.size_mb or 0.0 }}">
+            <input type="hidden" name="is_estimated_{{ loop.index0 }}" value="{{ item.is_estimated }}">
+            <input type="hidden" name="cache_file_{{ loop.index0 }}" value="{{ item.cache_file or '' }}">
+        </div>
+        {% endfor %}
+
+        <input type="hidden" name="item_count" value="{{ items | length }}">
+        <hr style="margin: 25px 0;">
+
+        <h2>2. Вкажіть загальний об'єм</h2>
+        <label for="memory_size">Доступний об'єм пам'яті (MB):</label>
+        <input type="number" id="memory_size" name="memory_size" min="1" value="{{ memory_size or '1000' }}">
+
+        <button type="submit">Оптимізувати!</button>
+    </form>
+    {% endif %}
+
+    {% if optimized_results %}
+    <div class="optimization-results">
+        <h2>Оптимальний набір</h2>
+        <p>Ліміт: {{ memory_size }} MB.</p>
+        <button type="button" onclick="downloadAllOptimized()" class="fetch-button"
+                style="background-color: #27ae60; margin-bottom: 25px;">
+            Завантажити все
+        </button>
+        {% for result in optimized_results %}
+            {% set download_url = '' %}
+            {% if result.type == 'text' and result.cache_file %}
+                {% set download_url = '/download-pdf/' ~ result.cache_file %}
+            {% elif result.type in ['pdf', 'doc', 'docx', 'ppt', 'pptx'] %}
+                {% set download_url = result.link %}
             {% endif %}
-
-            {% for item in items %}
-            <div class="result-item">
+            <div class="result-item"
+                 {% if download_url %}
+                     data-download-url="{{ download_url }}"
+                 {% endif %}
+            >
                 <h3>
-                    {{ item.title }}
-
-                    {% if item.type == 'text' and item.cache_file %}
-                    <a href="/download-pdf/{{ item.cache_file }}" class="download-pdf-btn" target="_blank">
+                    <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">{{ result.title }}</a>
+                    {% if result.type == 'text' and result.cache_file %}
+                    <a href="/download-pdf/{{ result.cache_file }}" class="download-pdf-btn" target="_blank">
                         Завантажити PDF
                     </a>
                     {% endif %}
                 </h3>
-                <p class="link">{{ item.link }}</p>
-
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <label>
-                        Вага (пріоритет):
-                        <input type="number" name="weight_{{ loop.index0 }}" class="weight-input" min="1" max="10" value="{{ item.weight }}">
-                    </label>
-
-                    {% if item.size_mb is not none %}
-                        <span class="size-info {% if item.is_estimated %}estimated{% endif %}">
-                            Розмір: {{ item.size_mb }} MB
-                            {% if item.is_estimated %}(Оцінка){% endif %}
-                        </span>
-                    {% else %}
-                        <span class="size-info unknown">
-                            Розмір невідомий
-                        </span>
-                    {% endif %}
+                <p class="link">{{ result.link }}</p>
+                <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                    <span>Вага: {{ result.weight }}</span>
+                    <span>Розмір: {{ result.size_mb }} MB {% if result.is_estimated %}(Оцінка){% endif %}</span>
                 </div>
-
-                <input type="hidden" name="title_{{ loop.index0 }}" value="{{ item.title }}">
-                <input type="hidden" name="link_{{ loop.index0 }}" value="{{ item.link }}">
-                <input type="hidden" name="snippet_{{ loop.index0 }}" value="{{ item.snippet | escape }}">
-                <input type="hidden" name="type_{{ loop.index0 }}" value="{{ item.type }}">
-                <input type="hidden" name="size_mb_{{ loop.index0 }}" value="{{ item.size_mb or 0.0 }}">
-                <input type="hidden" name="is_estimated_{{ loop.index0 }}" value="{{ item.is_estimated }}">
-                <input type="hidden" name="cache_file_{{ loop.index0 }}" value="{{ item.cache_file or '' }}">
             </div>
-            {% endfor %}
-
-            <input type="hidden" name="item_count" value="{{ items | length }}">
-            <hr style="margin: 25px 0;">
-
-            <h2>2. Вкажіть загальний об'єм</h2>
-            <label for="memory_size">Доступний об'єм пам'яті (MB):</label>
-            <input type="number" id="memory_size" name="memory_size" min="1" value="{{ memory_size or '1000' }}">
-
-            <button type="submit">Оптимізувати!</button>
-        </form>
-        {% endif %}
-
-        {% if optimized_results %}
-        <div class="optimization-results">
-            <h2>Оптимальний набір</h2>
-            <p>Ліміт: {{ memory_size }} MB.</p>
-            <button type="button" onclick="downloadAllOptimized()" class="fetch-button"
-                    style="background-color: #27ae60; margin-bottom: 25px;">
-                Завантажити все
-            </button>
-            {% for result in optimized_results %}
-                {% set download_url = '' %}
-                {% if result.type == 'text' and result.cache_file %}
-                    {% set download_url = '/download-pdf/' ~ result.cache_file %}
-                {% elif result.type in ['pdf', 'doc', 'docx', 'ppt', 'pptx'] %}
-                    {% set download_url = result.link %}
-                {% endif %}
-                <div class="result-item"
-                     {% if download_url %}
-                         data-download-url="{{ download_url }}"
-                     {% endif %}
-                >
-                    <h3>
-                        <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">{{ result.title }}</a>
-                        {% if result.type == 'text' and result.cache_file %}
-                        <a href="/download-pdf/{{ result.cache_file }}" class="download-pdf-btn" target="_blank">
-                            Завантажити PDF
-                        </a>
-                        {% endif %}
-                    </h3>
-                    <p class="link">{{ result.link }}</p>
-                    <div style="display: flex; justify-content: space-between; font-weight: 600;">
-                        <span>Вага: {{ result.weight }}</span>
-                        <span>Розмір: {{ result.size_mb }} MB {% if result.is_estimated %}(Оцінка){% endif %}</span>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
+        {% endfor %}
     </div>
+    {% endif %}
+
     <script>
         function downloadAllOptimized() {
             const itemsToDownload = document.querySelectorAll('.optimization-results .result-item[data-download-url]');
@@ -228,18 +203,14 @@
 
             itemsToDownload.forEach((item, index) => {
                 const url = item.dataset.downloadUrl;
-
                 const a = document.createElement('a');
                 a.href = url;
-
                 if (url.startsWith('/')) {
                     a.download = '';
                 } else {
                     a.target = '_blank';
                 }
-
                 document.body.appendChild(a);
-
                 setTimeout(() => {
                     a.click();
                     document.body.removeChild(a);
@@ -247,5 +218,4 @@
             });
         }
     </script>
-</body>
-</html>
+{% endblock %}

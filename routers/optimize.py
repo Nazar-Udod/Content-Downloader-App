@@ -64,17 +64,19 @@ async def optimize_content(request: Request):
 
     total_size = round(sum(item.get('size_mb', 0) for item in items_to_optimize), 2)
 
-    if error:
-        return templates.TemplateResponse("prepare.html", {
-            "request": request, "items": items_to_optimize, "memory_size": memory_size,
-            "error": error, "total_size": total_size
-        })
-
-    # Повертаємо сторінку з результатами
-    return templates.TemplateResponse("prepare.html", {
+    context = {
         "request": request,
         "items": items_to_optimize,
         "memory_size": memory_size,
-        "optimized_results": optimized_results,
-        "total_size": total_size
-    })
+        "total_size": total_size,
+        "user_email": request.session.get("user_email"),
+        "optimization_count": len(items_to_optimize)  # Кількість елементів, які ми оптимізували
+    }
+
+    if error:
+        context["error"] = error
+        return templates.TemplateResponse("prepare.html", context)
+
+    # Додаємо результати до контексту і повертаємо
+    context["optimized_results"] = optimized_results
+    return templates.TemplateResponse("prepare.html", context)
