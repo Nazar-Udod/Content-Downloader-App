@@ -61,8 +61,8 @@
     }
     .bookmark-actions {
         display: flex; gap: 8px;
-        flex-basis: 300px; /* Допомагає з вирівнюванням при перенесенні */
-        flex-wrap: wrap; /* Дозволяє кнопкам переноситися */
+        flex-basis: 300px;
+        flex-wrap: wrap;
     }
     .bookmark-actions select {
         padding: 5px; border: 1px solid #ccc; border-radius: 5px;
@@ -96,6 +96,14 @@
         color: white; font-size: 14px; cursor: pointer; border: none;
         font-family: inherit;
     }
+
+    .size-info {
+        font-weight: 500; color: #555; background-color: #f0f0f0;
+        padding: 2px 6px; border-radius: 4px; font-size: 13px;
+        margin-left: 10px;
+        display: inline-block; /* Щоб був поруч з 'a' */
+    }
+    .size-info.unknown { background-color: #fff3cd; color: #856404; }
 </style>
 {% endblock %}
 
@@ -154,6 +162,17 @@
                 <a href="{{ bookmark.material.URL }}" target="_blank" rel="noopener noreferrer">
                     {{ bookmark.Name }}
                 </a>
+
+                {% set material = bookmark.material %}
+                {% if material.Size is not none %}
+                    <span class="size-info">
+                        {{ (material.Size / 1024 / 1024) | round(2) }} MB
+                    </span>
+                {% else %}
+                    <span class="size-info unknown">
+                        Розмір невідомий
+                    </span>
+                {% endif %}
                 <p>{{ bookmark.material.URL }}</p>
 
                 <div class="actions">

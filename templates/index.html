@@ -137,57 +137,64 @@
                     <p>{{ result.snippet }}</p>
 
                     <div class="actions">
-                        {% set item_url = result.link if result else material.URL %}
-                        {% set item_type = result.type if result else material.Type %}
+                        {% set item_url = result.link %}
+                        {% set item_type = result.type %}
 
                         {% if item_type == 'text' %}
-                            <form action="/convert" method="post" style="display: inline;">
-                                <input type="hidden" name="url" value="{{ item_url }}">
-                                <button type="submit">Конвертувати в PDF</button>
-                            </form>
+                            <button type="submit"
+                                    formaction="/convert"
+                                    formmethod="post"
+                                    name="convert_index"
+                                    value="{{ loop.index0 }}">
+                                Конвертувати в PDF
+                            </button>
                             <span class="tag text">Web-сторінка</span>
 
                         {% elif item_type == 'video' %}
-                            <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
-                                <input type="hidden" name="url" value="{{ item_url }}">
-                                <input type="hidden" name="type" value="{{ item_type }}">
-                                <button type="submit" class="link-button">Перейти на YouTube</button>
-                            </form>
+                            <button type="submit"
+                                    formaction="/history/track-click"
+                                    formmethod="post"
+                                    name="track_index"
+                                    value="{{ loop.index0 }}"
+                                    class="link-button"
+                                    formtarget="_blank">
+                                Перейти на YouTube
+                            </button>
                             <span class="tag video">Відео</span>
                         {% elif item_type == 'pdf' %}
-                            <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
-                                <input type="hidden" name="url" value="{{ item_url }}">
-                                <input type="hidden" name="type" value="{{ item_type }}">
-                                <button type="submit" class="link-button" download>Завантажити PDF</button>
-                            </form>
+                            <button type="submit" formaction="/history/track-click" formmethod="post"
+                                    name="track_index" value="{{ loop.index0 }}"
+                                    class="link-button" formtarget="_blank" download>
+                                Завантажити PDF
+                            </button>
                             <span class="tag pdf">PDF Документ</span>
                         {% elif item_type == 'doc' %}
-                            <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
-                                <input type="hidden" name="url" value="{{ item_url }}">
-                                <input type="hidden" name="type" value="{{ item_type }}">
-                                <button type="submit" class="link-button" download>Завантажити DOC</button>
-                            </form>
+                            <button type="submit" formaction="/history/track-click" formmethod="post"
+                                    name="track_index" value="{{ loop.index0 }}"
+                                    class="link-button" formtarget="_blank" download>
+                                Завантажити DOC
+                            </button>
                             <span class="tag doc">DOC Документ</span>
                         {% elif item_type == 'ppt' %}
-                            <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
-                                <input type="hidden" name="url" value="{{ item_url }}">
-                                <input type="hidden" name="type" value="{{ item_type }}">
-                                <button type="submit" class="link-button" download>Завантажити PPT</button>
-                            </form>
+                            <button type="submit" formaction="/history/track-click" formmethod="post"
+                                    name="track_index" value="{{ loop.index0 }}"
+                                    class="link-button" formtarget="_blank" download>
+                                Завантажити PPT
+                            </button>
                             <span class="tag ppt">Презентація</span>
                         {% elif item_type == 'audio_yt_music' %}
-                            <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
-                                <input type="hidden" name="url" value="{{ item_url }}">
-                                <input type="hidden" name="type" value="{{ item_type }}">
-                                <button type="submit" class="link-button">Слухати в YouTube Music</button>
-                            </form>
+                            <button type="submit" formaction="/history/track-click" formmethod="post"
+                                    name="track_index" value="{{ loop.index0 }}"
+                                    class="link-button" formtarget="_blank">
+                                Слухати в YouTube Music
+                            </button>
                             <span class="tag audio">Аудіо</span>
                         {% elif item_type == 'audio_spotify' %}
-                            <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
-                                <input type="hidden" name="url" value="{{ item_url }}">
-                                <input type="hidden" name="type" value="{{ item_type }}">
-                                <button type="submit" class="link-button">Слухати в Spotify</button>
-                            </form>
+                            <button type="submit" formaction="/history/track-click" formmethod="post"
+                                    name="track_index" value="{{ loop.index0 }}"
+                                    class="link-button" formtarget="_blank">
+                                Слухати в Spotify
+                            </button>
                             <span class="tag audio">Аудіо</span>
                         {% endif %}
                     </div>

@@ -18,15 +18,32 @@ router = APIRouter()
 
 @router.post("/convert")
 async def convert_to_pdf(
-    request: Request,
-    url: str = Form(...),
-    db: AsyncSession = Depends(get_db), # 7. Додаємо db
-    user: User | None = Depends(get_current_user) # 8. Додаємо user
+        request: Request,
+        db: AsyncSession = Depends(get_db),
+        user: User | None = Depends(get_current_user)
 ):
     """
-    Конвертує URL в PDF та віддає на завантаження.
-    Якщо користувач залогінений, додає до історії.
+    Конвертує URL в PDF.
+    Приймає АБО індекс 'convert_index' (з index.html),
+    АБО прямий 'url' (з bookmarks.html/history.html).
     """
+    form_data = await request.form()
+    url = None
+
+    index = form_data.get("convert_index")
+    if index is not None:
+        url = form_data.get(f"link_{index}")
+        if not url:
+            request.session["convert_error"] = "Не вдалося знайти URL для конвертації за індексом."
+            return RedirectResponse(url="/", status_code=303)
+
+    if url is None:
+        url = form_data.get("url")
+
+    if url is None:
+        request.session["convert_error"] = "Не вдалося знайти URL або індекс для конвертації."
+        return RedirectResponse(url="/", status_code=303)
+
     pdf_content, filename, error = await generate_pdf_for_download(url)
 
     if error:
@@ -38,6 +55,7 @@ async def convert_to_pdf(
             await add_to_history(db, user, url, "text")
         except Exception as e:
             print(f"ПОМИЛКА (convert history): {e}")
+
     return StreamingResponse(
         io.BytesIO(pdf_content),
         media_type="application/pdf",
@@ -46,7 +64,8 @@ async def convert_to_pdf(
 
 
 @router.post("/fetch-sizes")
-async def fetch_sizes(request: Request):
+# 1. ДОДАЙТЕ db: AsyncSession
+async def fetch_sizes(request: Request, db: AsyncSession = Depends(get_db)):
     """
     Примусово оновлює розміри для ВСІХ елементів у сесії,
     використовуючи asyncio.gather для паралельної обробки.
@@ -57,7 +76,7 @@ async def fetch_sizes(request: Request):
 
     print(f"Отримання розмірів для {len(optimization_list)} елементів (паралельно)...")
 
-    tasks = [update_item_size(item) for item in optimization_list]
+    tasks = [update_item_size(item, db) for item in optimization_list]
     updated_list = await asyncio.gather(*tasks)
 
     print("Отримання розмірів завершено.")

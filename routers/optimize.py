@@ -1,6 +1,8 @@
 import asyncio
-from fastapi import APIRouter, Request, Form
+from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+from database import get_db
 
 from config import templates
 from services.content_utils import update_item_size
@@ -10,7 +12,7 @@ router = APIRouter()
 
 
 @router.post("/optimize", response_class=HTMLResponse)
-async def optimize_content(request: Request):
+async def optimize_content(request: Request, db: AsyncSession = Depends(get_db)):
     """
     Виконує оптимізацію.
     Якщо розміри відсутні, він асинхронно оновить їх ПЕРЕД запуском алгоритму.
@@ -41,6 +43,14 @@ async def optimize_content(request: Request):
     # --- Оновлення відсутніх розмірів ---
     items_with_size = []
     items_needing_size = []
+
+    if items_needing_size:
+        print(f"Оптимізація: оновлення {len(items_needing_size)} відсутніх розмірів (паралельно)...")
+        tasks = [update_item_size(item, db) for item in items_needing_size]
+        updated_items = await asyncio.gather(*tasks)
+        items_to_optimize = items_with_size + updated_items
+        print("Оновлення розмірів завершено.")
+
     for item in items_to_optimize:
         if item.get('size_mb') is None or item.get('size_mb') == 0.0:
             items_needing_size.append(item)

@@ -36,22 +36,35 @@ async def get_history_page(
 
 @router.post("/track-click")
 async def track_click_and_redirect(
-        request: Request,
-        db: AsyncSession = Depends(get_db),
-        user: User | None = Depends(get_current_user),  # Необов'язковий користувач
-        url: str = Form(...),
-        type: str = Form(...)
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_current_user)
 ):
     """
-    Реєструє клік (додає до історії), якщо користувач залогінений,
-    і одразу перенаправляє користувача на цільовий URL.
+    Реєструє клік і перенаправляє.
+    Приймає АБО індекс 'track_index' (з index.html),
+    АБО прямі 'url'/'type' (з bookmarks.html/history.html).
     """
+    form_data = await request.form()
+    url = None
+    type_str = None
+
+    index = form_data.get("track_index")
+    if index is not None:
+        url = form_data.get(f"link_{index}")
+        type_str = form_data.get(f"type_{index}")
+
+    if url is None:
+        url = form_data.get("url")
+        type_str = form_data.get("type")
+
+    if not url or not type_str:
+        return RedirectResponse(url="/", status_code=303)
     if user:
         try:
-            await history_service.add_to_history(db, user, url, type)
+            await history_service.add_to_history(db, user, url, type_str)
         except Exception as e:
             print(f"ПОМИЛКА (track-click history): {e}")
-            # Не перериваємо користувача, просто логуємо
 
-    # Завжди перенаправляємо користувача на URL, який він хотів
+    # Перенаправляємо користувача на URL, на який він хотів перейти
     return RedirectResponse(url=url, status_code=303)

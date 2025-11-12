@@ -5,6 +5,9 @@ import yt_dlp
 from pathlib import Path
 from playwright.async_api import Error as PlaywrightError
 from urllib.parse import urlparse
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from models import Material
 
 # Локальні імпорти
 from config import (
@@ -94,7 +97,7 @@ def get_external_content_size_mb(link: str, content_type: str) -> (float, bool):
     return 0.0, True
 
 
-async def update_item_size(item: dict) -> dict:
+async def update_item_size(item: dict, db: AsyncSession) -> dict:
     """
     Оновлює розмір для одного елемента, генеруючи PDF-кеш, якщо потрібно.
     """
@@ -163,6 +166,23 @@ async def update_item_size(item: dict) -> dict:
 
     updated_item['size_mb'] = size_mb
     updated_item['is_estimated'] = is_estimated
+
+    if not is_estimated and size_mb is not None and updated_item.get('link'):
+        try:
+            result = await db.execute(
+                select(Material).where(Material.URL == updated_item['link'])
+            )
+            material = result.scalars().first()
+
+            # Оновлюємо, тільки якщо матеріал існує і розмір ще не встановлено
+            if material and material.Size is None:
+                material.Size = int(size_mb * 1024 * 1024)  # Конвертуємо MB в байти
+                await db.commit()
+                print(f"Оновлено розмір в БД (в байтах): {material.URL}")
+        except Exception as e:
+            print(f"ПОМИЛKA (оновлення розміру в БД): {e}")
+            await db.rollback()
+
     return updated_item
 
 

@@ -51,6 +51,14 @@
     .link-button:hover {
         opacity: 0.9;
     }
+
+    .size-info {
+        font-weight: 500; color: #555; background-color: #f0f0f0;
+        padding: 2px 6px; border-radius: 4px; font-size: 13px;
+        margin-left: 10px;
+        display: inline-block;
+    }
+    .size-info.unknown { background-color: #fff3cd; color: #856404; }
 </style>
 {% endblock %}
 
@@ -71,8 +79,18 @@
     <li class="history-item">
         <div class="history-info">
             <a href="{{ material.URL }}" target="_blank" rel="noopener noreferrer">
-                {{ material.Type }} {{ material.URL }}
+                {{ material.URL }}
             </a>
+
+            {% if material.Size is not none %}
+                <span class="size-info">
+                    {{ (material.Size / 1024 / 1024) | round(2) }} MB
+                </span>
+            {% else %}
+                <span class="size-info unknown">
+                    Розмір невідомий
+                </span>
+            {% endif %}
             <p class="url">{{ material.URL }}</p>
             <p class="date">Дата: {{ item.LoadDate.strftime('%Y-%m-%d %H:%M') }}</p>
         </div>
