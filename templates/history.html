@@ -59,6 +59,17 @@
         display: inline-block;
     }
     .size-info.unknown { background-color: #fff3cd; color: #856404; }
+
+    .delete-btn {
+        background-color: #e74c3c;
+        padding: 8px 15px;
+        border-radius: 6px;
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+        border: none;
+        font-family: inherit;
+    }
 </style>
 {% endblock %}
 
@@ -96,6 +107,11 @@
         </div>
         
         <div class="actions">
+            <form action="/history/delete" method="post" style="display: inline;"
+                  onsubmit="return confirm('Ви впевнені, що хочете видалити цей запис?')">
+                <input type="hidden" name="history_id" value="{{ item.HistoryID }}">
+                <button type="submit" class="delete-btn">Видалити</button>
+            </form>
             {% if material.Type == 'text' %}
                 <form action="/convert" method="post" style="display: inline;">
                     <input type="hidden" name="url" value="{{ material.URL }}">

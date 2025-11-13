@@ -68,3 +68,19 @@ async def track_click_and_redirect(
 
     # Перенаправляємо користувача на URL, на який він хотів перейти
     return RedirectResponse(url=url, status_code=303)
+
+
+@router.post("/delete")
+async def delete_from_history(
+        request: Request,
+        user: User = Depends(get_required_user),
+        db: AsyncSession = Depends(get_db),
+        history_id: int = Form(...)
+):
+    """
+    Видаляє один запис з історії.
+    """
+    await history_service.delete_history_item(db, user, history_id)
+
+    # Повертаємо користувача назад на сторінку історії
+    return RedirectResponse(url="/history", status_code=303)

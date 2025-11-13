@@ -39,3 +39,31 @@ async def get_user_history(db: AsyncSession, user: User) -> list[HistoryMaterial
         .order_by(HistoryMaterial.LoadDate.desc())  # Новіші спочатку
     )
     return result.scalars().all()
+
+
+async def check_history_owner(db: AsyncSession, user: User, history_id: int) -> HistoryMaterial | None:
+    """
+    Перевіряє, чи належить запис історії користувачу, і повертає його.
+    """
+    result = await db.execute(
+        select(HistoryMaterial)
+        .where(
+            HistoryMaterial.HistoryID == history_id,
+            HistoryMaterial.UserID == user.UserID
+        )
+    )
+    return result.scalars().first()
+
+
+async def delete_history_item(db: AsyncSession, user: User, history_id: int):
+    """
+    Видаляє один запис з історії користувача.
+    """
+    item_to_delete = await check_history_owner(db, user, history_id)
+
+    if item_to_delete:
+        await db.delete(item_to_delete)
+        await db.commit()
+        print(f"Видалено запис історії {history_id} для користувача {user.UserID}")
+    else:
+        print(f"Помилка видалення: Запис історії {history_id} не знайдено або немає доступу.")
