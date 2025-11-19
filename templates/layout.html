@@ -57,13 +57,13 @@
 
             <div class="auth-links">
                 {% if user_email %}
-                    <a href="/bookmarks">Мої закладки</a>
+                    <a href="/bookmarks">Закладки</a>
                     <span style="color: #ccc; margin: 0 5px;">|</span>
                     <a href="/history">Історія</a> <span style="color: #ccc; margin: 0 5px;">|</span>
                     <span class="user-info">Вітаємо, {{ user_email }}</span>
                     <a href="/logout" class="logout-link">Вийти</a>
                 {% else %}
-                    <a href="/login">Увійти</a>
+                    <a href="/login">Вхід</a>
                     <a href="/register">Реєстрація</a>
                 {% endif %}
             </div>
