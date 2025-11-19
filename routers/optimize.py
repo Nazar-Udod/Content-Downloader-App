@@ -59,7 +59,7 @@ async def optimize_content(request: Request, db: AsyncSession = Depends(get_db))
 
     if items_needing_size:
         print(f"Оптимізація: оновлення {len(items_needing_size)} відсутніх розмірів (паралельно)...")
-        tasks = [update_item_size(item) for item in items_needing_size]
+        tasks = [update_item_size(item, db) for item in items_needing_size]
         updated_items = await asyncio.gather(*tasks)
         items_to_optimize = items_with_size + updated_items
         print("Оновлення розмірів завершено.")
