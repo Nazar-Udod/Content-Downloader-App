@@ -22,13 +22,36 @@
     }
     
     .folder-item {
-        margin-bottom: 25px;
+        margin-bottom: 15px;
     }
     .folder-header {
         display: flex; justify-content: space-between; align-items: center;
-        background: #eaf5ff; padding: 10px 15px; border-radius: 8px 8px 0 0;
+        background: #eaf5ff; padding: 10px 15px; border-radius: 8px;
+        transition: border-radius 0.3s;
+    }
+    .folder-header.active {
+        border-radius: 8px 8px 0 0;
+    }
+    .folder-title-wrapper {
+        display: flex; align-items: center; gap: 10px;
+        cursor: pointer;
+        user-select: none;
+        flex-grow: 1;
     }
     .folder-header h3 { margin: 0; color: #0056b3; }
+    .folder-arrow {
+        display: inline-block;
+        width: 0;
+        height: 0;
+        border-top: 6px solid transparent;
+        border-bottom: 6px solid transparent;
+        border-left: 8px solid #0056b3;
+        transition: transform 0.2s ease;
+    }
+    .folder-arrow.open {
+        transform: rotate(90deg);
+    }
+
     .folder-actions { display: flex; gap: 10px; }
     .folder-actions button {
         background: none; border: none; cursor: pointer; font-size: 14px;
@@ -36,12 +59,16 @@
     }
     .folder-actions .rename-btn { color: #2980b9; }
     .folder-actions .delete-btn { color: #e74c3c; }
-    
     .bookmark-list {
         list-style: none; padding: 0; margin: 0;
         border: 1px solid #eaf5ff; border-top: none;
         border-radius: 0 0 8px 8px;
+        display: none; /* Приховано! */
     }
+    .bookmark-list.open {
+        display: block;
+    }
+
     .bookmark-item {
         padding: 15px; border-bottom: 1px solid #f4f4f4;
         display: flex; justify-content: space-between; align-items: center; gap: 10px;
@@ -101,7 +128,7 @@
         font-weight: 500; color: #555; background-color: #f0f0f0;
         padding: 2px 6px; border-radius: 4px; font-size: 13px;
         margin-left: 10px;
-        display: inline-block; /* Щоб був поруч з 'a' */
+        display: inline-block;
     }
     .size-info.unknown { background-color: #fff3cd; color: #856404; }
 </style>
@@ -126,10 +153,14 @@
 
 {% for folder in folders %}
 <div class="folder-item">
-    <div class="folder-header">
-        <h3>{{ folder.Name }}</h3>
+    <div class="folder-header" id="header-{{ folder.FolderID }}">
 
-        <div classs="folder-actions">
+        <div class="folder-title-wrapper" onclick="toggleFolder('{{ folder.FolderID }}')">
+            <span class="folder-arrow" id="arrow-{{ folder.FolderID }}"></span>
+            <h3>{{ folder.Name }}</h3>
+        </div>
+
+        <div class="folder-actions">
             <form action="/bookmarks/folder/rename" method="post" class="rename-form" id="rename-form-{{ folder.FolderID }}" style="display: none;">
                 <input type="hidden" name="folder_id" value="{{ folder.FolderID }}">
                 <input type="text" name="new_name" value="{{ folder.Name }}" required>
@@ -151,7 +182,7 @@
         </div>
     </div>
 
-    <ul class="bookmark-list">
+    <ul class="bookmark-list" id="list-{{ folder.FolderID }}">
         {% if not folder.bookmarks %}
         <li class="bookmark-item"><p style="color: #7f8c8d;">Папка порожня</p></li>
         {% endif %}
@@ -231,7 +262,7 @@
                     {% endif %}
                 </div>
             </div>
-            
+
             <div class="bookmark-actions">
                 <form action="/bookmarks/move" method="post">
                     <input type="hidden" name="bookmark_id" value="{{ bookmark.BookmarkID }}">
@@ -244,8 +275,8 @@
                     </select>
                     <button type="submit" class="move-btn">Перемістити</button>
                 </form>
-                
-                <form action="/bookmarks/delete" method="post" 
+
+                <form action="/bookmarks/delete" method="post"
                       onsubmit="return confirm('Видалити закладку «{{ bookmark.Name }}»?')">
                     <input type="hidden" name="bookmark_id" value="{{ bookmark.BookmarkID }}">
                     <button type="submit" class="delete-btn">Видалити</button>
@@ -256,5 +287,23 @@
     </ul>
 </div>
 {% endfor %}
+
+<script>
+    function toggleFolder(folderId) {
+        var list = document.getElementById('list-' + folderId);
+        var arrow = document.getElementById('arrow-' + folderId);
+        var header = document.getElementById('header-' + folderId);
+
+        if (list.classList.contains('open')) {
+            list.classList.remove('open');
+            arrow.classList.remove('open');
+            header.classList.remove('active');
+        } else {
+            list.classList.add('open');
+            arrow.classList.add('open');
+            header.classList.add('active');
+        }
+    }
+</script>
 
 {% endblock %}
