@@ -2,29 +2,6 @@
 
 {% block title %}Вхід – Завантажувач контенту{% endblock %}
 
-{% block head_styles %}
-<style>
-    .auth-form { max-width: 400px; margin: 30px auto; }
-    .auth-form h1 { text-align: center; }
-    .form-group { margin-bottom: 20px; }
-    .form-group label {
-        display: block; margin-bottom: 8px; font-weight: 500;
-    }
-    .form-group input[type="email"],
-    .form-group input[type="password"] {
-        width: 100%; padding: 12px 15px; border: 1px solid #ddd;
-        border-radius: 8px; font-size: 16px; box-sizing: border-box;
-    }
-    .form-button {
-        display: block; width: 100%; padding: 15px; font-size: 18px; font-weight: 600;
-        color: white; background-color: #3498db; border: none;
-        border-radius: 8px; cursor: pointer; transition: background-color 0.3s;
-    }
-    .form-button:hover { background-color: #2980b9; }
-    .form-switch { text-align: center; margin-top: 20px; }
-</style>
-{% endblock %}
-
 {% block content %}
 <form class="auth-form" action="/login" method="post">
     <h1>Вхід</h1>

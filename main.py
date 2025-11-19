@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
 # Локальні імпорти
@@ -58,6 +59,8 @@ async def on_shutdown():
     """
     await stop_browser()
 
+# Монтуємо папку "Static"
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # --- Підключення Роутерів ---
 app.include_router(auth.router, tags=["Автентифікація"])
