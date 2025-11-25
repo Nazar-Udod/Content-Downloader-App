@@ -63,6 +63,7 @@ h2 {
 .header-nav .user-info { font-weight: 500; }
 .header-nav .auth-links a { margin-left: 15px; }
 .header-nav a.logout-link { color: #e74c3c; }
+.header-nav .list-clearing { color: #e74c3c; }
 
 /* --- Page Navigation (Back buttons) --- */
 .page-nav {
@@ -105,6 +106,10 @@ h2 {
     padding: 12px 20px; background-color: #3498db; color: white;
     border: none; border-radius: 8px; cursor: pointer; font-size: 16px;
 }
+
+.delete-folder-form { display: inline; }
+
+.convert-form { display: inline; }
 
 /* --- Lists & Items (History, Results, Bookmarks) --- */
 .history-list, .bookmark-list { list-style: none; padding: 0; margin: 0; }
@@ -207,6 +212,7 @@ h2 {
     padding: 15px; border-bottom: 1px solid #f4f4f4;
     display: flex; justify-content: space-between; align-items: center; gap: 10px;
 }
+.bookmark-item-empty p { "color: #7f8c8d;" }
 .bookmark-item:last-child { border-bottom: none; }
 .bookmark-info { flex-grow: 1; flex-basis: 300px; }
 
@@ -234,6 +240,8 @@ h2 {
     border-radius: 5px; font-size: 14px !important;
 }
 .optimization-results { margin-top: 30px; border-top: 2px solid #3498db; padding-top: 20px; }
+.optimization-item-params { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.optimization-result-params { display: flex; justify-content: space-between; font-weight: 600; }
 .total-size-bar {
     background-color: #e9ecef; border-radius: 8px; padding: 15px;
     text-align: center; font-size: 1.1em; font-weight: 600; margin: 10px 0 20px 0;

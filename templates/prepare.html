@@ -42,7 +42,7 @@
             </h3>
             <p class="link">{{ item.link }}</p>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <div class="optimization-item-params">
                 <label>
                     Вага (пріоритет):
                     <input type="number" name="weight_{{ loop.index0 }}" class="weight-input" min="1" max="10" value="{{ item.weight }}">
@@ -85,8 +85,7 @@
     <div class="optimization-results">
         <h2>Оптимальний набір</h2>
         <p>Ліміт: {{ memory_size }} MB.</p>
-        <button type="button" onclick="downloadAllOptimized()" class="fetch-button"
-                style="background-color: #27ae60; margin-bottom: 25px;">
+        <button type="button" onclick="downloadAllOptimized()" class="fetch-button">
             Завантажити все
         </button>
         {% for result in optimized_results %}
@@ -110,7 +109,7 @@
                     {% endif %}
                 </h3>
                 <p class="link">{{ result.link }}</p>
-                <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                <div class="optimization-result-params">
                     <span>Вага: {{ result.weight }}</span>
                     <span>Розмір: {{ result.size_mb }} MB {% if result.is_estimated %}(Оцінка){% endif %}</span>
                 </div>

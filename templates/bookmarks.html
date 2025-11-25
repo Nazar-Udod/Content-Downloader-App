@@ -29,7 +29,7 @@
         </div>
 
         <div class="folder-actions">
-            <form action="/bookmarks/folder/rename" method="post" class="rename-form" id="rename-form-{{ folder.FolderID }}" style="display: none;">
+            <form action="/bookmarks/folder/rename" method="post" style="display: none;" id="rename-form-{{ folder.FolderID }}">
                 <input type="hidden" name="folder_id" value="{{ folder.FolderID }}">
                 <input type="text" name="new_name" value="{{ folder.Name }}" required>
                 <button type="submit" class="rename-btn">Зберегти</button>
@@ -41,7 +41,7 @@
             </button>
 
             {% if folder.Name != 'Мої закладки' %}
-            <form action="/bookmarks/folder/delete" method="post" style="display: inline;"
+            <form action="/bookmarks/folder/delete" method="post" class="delete-folder-form"
                   onsubmit="return confirm('Ви впевнені, що хочете видалити папку «{{ folder.Name }}»? Всі закладки в ній будуть видалені.')">
                 <input type="hidden" name="folder_id" value="{{ folder.FolderID }}">
                 <button type="submit" class="delete-btn">Видалити</button>
@@ -52,7 +52,7 @@
 
     <ul class="bookmark-list" id="list-{{ folder.FolderID }}">
         {% if not folder.bookmarks %}
-        <li class="bookmark-item"><p style="color: #7f8c8d;">Папка порожня</p></li>
+        <li class="bookmark-item-empty"><p>Папка порожня</p></li>
         {% endif %}
 
         {% for bookmark in folder.bookmarks %}
@@ -79,49 +79,49 @@
                     {% set item_type = result.type if result else material.Type %}
 
                     {% if item_type == 'text' %}
-                        <form action="/convert" method="post" style="display: inline;">
+                        <form action="/convert" method="post" class="convert-form">
                             <input type="hidden" name="url" value="{{ item_url }}">
                             <button type="submit">Конвертувати в PDF</button>
                         </form>
                         <span class="tag text">Web-сторінка</span>
 
                     {% elif item_type == 'video' %}
-                        <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                        <form action="/history/track-click" method="post" class="convert-form" target="_blank">
                             <input type="hidden" name="url" value="{{ item_url }}">
                             <input type="hidden" name="type" value="{{ item_type }}">
                             <button type="submit" class="link-button">Перейти на YouTube</button>
                         </form>
                         <span class="tag video">Відео</span>
                     {% elif item_type == 'pdf' %}
-                        <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                        <form action="/history/track-click" method="post" class="convert-form" target="_blank">
                             <input type="hidden" name="url" value="{{ item_url }}">
                             <input type="hidden" name="type" value="{{ item_type }}">
                             <button type="submit" class="link-button" download>Завантажити PDF</button>
                         </form>
                         <span class="tag pdf">PDF Документ</span>
                     {% elif item_type == 'doc' %}
-                        <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                        <form action="/history/track-click" method="post" class="convert-form" target="_blank">
                             <input type="hidden" name="url" value="{{ item_url }}">
                             <input type="hidden" name="type" value="{{ item_type }}">
                             <button type="submit" class="link-button" download>Завантажити DOC</button>
                         </form>
                         <span class="tag doc">DOC Документ</span>
                     {% elif item_type == 'ppt' %}
-                        <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                        <form action="/history/track-click" method="post" class="convert-form" target="_blank">
                             <input type="hidden" name="url" value="{{ item_url }}">
                             <input type="hidden" name="type" value="{{ item_type }}">
                             <button type="submit" class="link-button" download>Завантажити PPT</button>
                         </form>
                         <span class="tag ppt">Презентація</span>
                     {% elif item_type == 'audio_yt_music' %}
-                        <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                        <form action="/history/track-click" method="post" class="convert-form" target="_blank">
                             <input type="hidden" name="url" value="{{ item_url }}">
                             <input type="hidden" name="type" value="{{ item_type }}">
                             <button type="submit" class="link-button">Слухати в YouTube Music</button>
                         </form>
                         <span class="tag audio">Аудіо</span>
                     {% elif item_type == 'audio_spotify' %}
-                        <form action="/history/track-click" method="post" style="display: inline;" target="_blank">
+                        <form action="/history/track-click" method="post" class="convert-form" target="_blank">
                             <input type="hidden" name="url" value="{{ item_url }}">
                             <input type="hidden" name="type" value="{{ item_type }}">
                             <button type="submit" class="link-button">Слухати в Spotify</button>
