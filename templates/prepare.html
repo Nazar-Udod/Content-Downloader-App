@@ -39,12 +39,6 @@
         <div class="result-item">
             <h3>
                 {{ item.title }}
-
-                {% if item.type == 'text' and item.cache_file %}
-                <a href="/download-pdf/{{ item.cache_file }}" class="download-pdf-btn" target="_blank">
-                    Завантажити PDF
-                </a>
-                {% endif %}
             </h3>
             <p class="link">{{ item.link }}</p>
 
