@@ -83,23 +83,3 @@ async def fetch_sizes(request: Request, db: AsyncSession = Depends(get_db)):
     request.session["optimization_list"] = updated_list
 
     return RedirectResponse(url="/optimization-list", status_code=303)
-
-
-@router.get("/download-pdf/{filename}")
-async def download_cached_pdf(filename: str):
-    """
-    Надає доступ до завантаження згенерованого PDF з кешу.
-    """
-    # Запобігаємо Path Traversal
-    if ".." in filename or "/" in filename:
-        return HTMLResponse(content="<h1>Неприпустиме ім'я файлу</h1>", status_code=400)
-
-    cache_path = PDF_CACHE_DIR / filename
-    if not cache_path.exists():
-        return HTMLResponse(content="<h1>Файл не знайдено</h1><p>Можливо, кеш було очищено.</p>", status_code=404)
-
-    return FileResponse(
-        path=cache_path,
-        media_type="application/pdf",
-        filename=f"{filename}.pdf"  # Надсилаємо оригінальне ім'я
-    )

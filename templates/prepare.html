@@ -89,29 +89,77 @@
             Завантажити все
         </button>
         {% for result in optimized_results %}
-            {% set download_url = '' %}
-            {% if result.type == 'text' and result.cache_file %}
-                {% set download_url = '/download-pdf/' ~ result.cache_file %}
-            {% elif result.type in ['pdf', 'doc', 'docx', 'ppt', 'pptx'] %}
-                {% set download_url = result.link %}
-            {% endif %}
-            <div class="result-item"
-                 {% if download_url %}
-                     data-download-url="{{ download_url }}"
-                 {% endif %}
-            >
+            <div class="result-item">
                 <h3>
                     <a href="{{ result.link }}" target="_blank" rel="noopener noreferrer">{{ result.title }}</a>
-                    {% if result.type == 'text' and result.cache_file %}
-                    <a href="/download-pdf/{{ result.cache_file }}" class="download-pdf-btn" target="_blank">
-                        Завантажити PDF
-                    </a>
-                    {% endif %}
                 </h3>
                 <p class="link">{{ result.link }}</p>
+
                 <div class="optimization-result-params">
                     <span>Вага: {{ result.weight }}</span>
                     <span>Розмір: {{ result.size_mb }} MB {% if result.is_estimated %}(Оцінка){% endif %}</span>
+                </div>
+
+                <div class="actions">
+                    {% set item_url = result.link %}
+                    {% set item_type = result.type %}
+
+                    {% if item_type == 'text' %}
+                        <form action="/convert" method="post" class="convert-form">
+                            <input type="hidden" name="url" value="{{ item_url | escape }}">
+                            <input type="hidden" name="type" value="text">
+                            <button type="submit">Конвертувати в PDF</button>
+                        </form>
+                        <span class="tag text">Web-сторінка</span>
+
+                    {% elif item_type == 'video' %}
+                        <form action="/history/track-click" method="post" class="convert-form" target="_blank">
+                            <input type="hidden" name="url" value="{{ item_url | escape }}">
+                            <input type="hidden" name="type" value="{{ item_type }}">
+                            <button type="submit" class="link-button">Перейти на YouTube</button>
+                        </form>
+                        <span class="tag video">Відео</span>
+
+                    {% elif item_type == 'pdf' %}
+                        <form action="/history/track-click" method="post" class="convert-form" target="_blank">
+                            <input type="hidden" name="url" value="{{ item_url | escape }}">
+                            <input type="hidden" name="type" value="{{ item_type }}">
+                            <button type="submit" class="link-button" download>Завантажити PDF</button>
+                        </form>
+                        <span class="tag pdf">PDF Документ</span>
+
+                    {% elif item_type == 'doc' %}
+                        <form action="/history/track-click" method="post" class="convert-form" target="_blank">
+                            <input type="hidden" name="url" value="{{ item_url | escape }}">
+                            <input type="hidden" name="type" value="{{ item_type }}">
+                            <button type="submit" class="link-button" download>Завантажити DOC</button>
+                        </form>
+                        <span class="tag doc">DOC Документ</span>
+
+                    {% elif item_type == 'ppt' %}
+                        <form action="/history/track-click" method="post" class="convert-form" target="_blank">
+                            <input type="hidden" name="url" value="{{ item_url | escape }}">
+                            <input type="hidden" name="type" value="{{ item_type }}">
+                            <button type="submit" class="link-button" download>Завантажити PPT</button>
+                        </form>
+                        <span class="tag ppt">Презентація</span>
+
+                    {% elif item_type == 'audio_yt_music' %}
+                        <form action="/history/track-click" method="post" class="convert-form" target="_blank">
+                            <input type="hidden" name="url" value="{{ item_url | escape }}">
+                            <input type="hidden" name="type" value="{{ item_type }}">
+                            <button type="submit" class="link-button">Слухати в YouTube Music</button>
+                        </form>
+                        <span class="tag audio">Аудіо</span>
+
+                    {% elif item_type == 'audio_spotify' %}
+                        <form action="/history/track-click" method="post" class="convert-form" target="_blank">
+                            <input type="hidden" name="url" value="{{ item_url | escape }}">
+                            <input type="hidden" name="type" value="{{ item_type }}">
+                            <button type="submit" class="link-button">Слухати в Spotify</button>
+                        </form>
+                        <span class="tag audio">Аудіо</span>
+                    {% endif %}
                 </div>
             </div>
         {% endfor %}
