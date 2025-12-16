@@ -39,16 +39,10 @@ async def on_startup():
     2. Запускаємо Playwright/браузер.
     3. Створюємо таблиці в БД (якщо їх немає).
     """
-    # 3. Створення таблиць
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         print("Таблиці бази даних перевірено/створено.")
 
-    # 1. Папка кешу
-    PDF_CACHE_DIR.mkdir(exist_ok=True)
-    print(f"Папка кешу PDF знаходиться тут: {PDF_CACHE_DIR.resolve()}")
-
-    # 2. Браузер
     await start_browser()
 
 
