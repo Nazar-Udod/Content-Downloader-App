@@ -11,7 +11,6 @@ from services import bookmark_service as service
 router = APIRouter(
     prefix="/bookmarks",
     tags=["Закладки"],
-    # Усі ендпоінти в цьому файлі будуть вимагати логін
     dependencies=[Depends(get_required_user)]
 )
 
@@ -27,7 +26,6 @@ async def get_bookmarks_page(
     """
     folders = await service.get_user_folders_with_bookmarks(db, user)
 
-    # Отримуємо дані для хедера з сесії
     optimization_list = request.session.get("optimization_list", [])
 
     return templates.TemplateResponse("bookmarks.html", {

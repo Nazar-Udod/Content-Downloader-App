@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-# Локальні імпорти
 from config import APP_SECRET_KEY, PDF_CACHE_DIR
 from services.browser_manager import start_browser, stop_browser
 from routers import pages, search, content, optimize
@@ -11,23 +10,23 @@ from routers import bookmarks
 from database import Base, engine
 from routers import history
 
-# --- Створення FastAPI ---
+# Створення FastAPI
 app = FastAPI(
     title="Web Content Downloader API",
     description="Система для пошуку та завантаження контенту з мережі.",
     version="0.1.0"
 )
 
-# --- Middleware ---
+# Middleware
 app.add_middleware(
     SessionMiddleware,
     secret_key=APP_SECRET_KEY,
-    https_only=False,  # Встановіть True для production
+    https_only=False,  # Встановити True для production
     max_age=86400 * 14  # 2 тижні
 )
 
 
-# --- Події життєвого циклу ---
+# Події життєвого циклу
 
 @app.on_event("startup")
 
@@ -35,9 +34,9 @@ app.add_middleware(
 async def on_startup():
     """
     При старті сервера:
-    1. Створюємо папку кешу.
-    2. Запускаємо Playwright/браузер.
-    3. Створюємо таблиці в БД (якщо їх немає).
+    1. Створює папку кешу.
+    2. Запускає Playwright/браузер.
+    3. Створює таблиці в БД (якщо їх немає).
     """
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -49,14 +48,14 @@ async def on_startup():
 @app.on_event("shutdown")
 async def on_shutdown():
     """
-    Закриваємо Playwright при зупинці сервера.
+    Закриває Playwright при зупинці сервера.
     """
     await stop_browser()
 
 # Монтуємо папку "Static"
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# --- Підключення Роутерів ---
+# Підключення роутерів
 app.include_router(auth.router, tags=["Автентифікація"])
 app.include_router(bookmarks.router, tags=["Закладки"])
 app.include_router(history.router, tags=["Історія"])

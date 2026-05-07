@@ -17,7 +17,7 @@ router = APIRouter(
 @router.get("/", response_class=HTMLResponse)
 async def get_history_page(
         request: Request,
-        user: User = Depends(get_required_user),  # Ця сторінка захищена
+        user: User = Depends(get_required_user),
         db: AsyncSession = Depends(get_db)
 ):
     """
@@ -42,8 +42,6 @@ async def track_click_and_redirect(
 ):
     """
     Реєструє клік і перенаправляє.
-    Приймає АБО індекс 'track_index' (з index.html),
-    АБО прямі 'url'/'type' (з bookmarks.html/history.html).
     """
     form_data = await request.form()
     url = None
@@ -66,7 +64,6 @@ async def track_click_and_redirect(
         except Exception as e:
             print(f"ПОМИЛКА (track-click history): {e}")
 
-    # Перенаправляємо користувача на URL, на який він хотів перейти
     return RedirectResponse(url=url, status_code=303)
 
 
@@ -82,5 +79,4 @@ async def delete_from_history(
     """
     await history_service.delete_history_item(db, user, history_id)
 
-    # Повертаємо користувача назад на сторінку історії
     return RedirectResponse(url="/history", status_code=303)

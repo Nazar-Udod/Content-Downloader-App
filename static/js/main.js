@@ -1,4 +1,3 @@
-// Функція для сторінки закладок (bookmarks.html)
 function toggleFolder(folderId) {
     var list = document.getElementById('list-' + folderId);
     var arrow = document.getElementById('arrow-' + folderId);
@@ -15,18 +14,14 @@ function toggleFolder(folderId) {
     }
 }
 
-// Функція для сторінки оптимізації (prepare.html)
 function downloadAllOptimized() {
-    // Знаходимо всі форми в блоці результатів
     const allForms = document.querySelectorAll('.optimization-results .result-item .actions form');
 
-    // Фільтруємо форми: залишаємо тільки ті, що НЕ є відео або аудіо
     const formsToSubmit = Array.from(allForms).filter(form => {
         const typeInput = form.querySelector('input[name="type"]');
         if (!typeInput) return false;
 
         const type = typeInput.value;
-        // Список типів, які треба ігнорувати
         const ignoredTypes = ['video', 'audio_yt_music', 'audio_spotify'];
 
         return !ignoredTypes.includes(type);
@@ -41,16 +36,12 @@ function downloadAllOptimized() {
         return;
     }
 
-    // Запускаємо сабміт форм із затримкою
     formsToSubmit.forEach((form, index) => {
         setTimeout(() => {
-            // Примусово встановлюємо target="_blank", щоб завантаження
-            // відкривалося в новій вкладці/фоні і не блокувало поточну сторінку
-            // для виконання наступних ітерацій циклу.
             form.target = '_blank';
 
             form.submit();
 
-        }, 800 * index); // Інтервал 800мс, щоб не "задушити" браузер
+        }, 800 * index);
     });
 }

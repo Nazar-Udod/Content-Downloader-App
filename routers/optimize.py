@@ -15,7 +15,6 @@ router = APIRouter()
 async def optimize_content(request: Request, db: AsyncSession = Depends(get_db)):
     """
     Виконує оптимізацію.
-    Якщо розміри відсутні, він асинхронно оновить їх ПЕРЕД запуском алгоритму.
     """
     form_data = await request.form()
     memory_size = form_data.get("memory_size", "1000")
@@ -40,7 +39,6 @@ async def optimize_content(request: Request, db: AsyncSession = Depends(get_db))
             "cache_file": form_data.get(f"cache_file_{i}")
         })
 
-    # --- Оновлення відсутніх розмірів ---
     items_with_size = []
     items_needing_size = []
 
@@ -63,13 +61,10 @@ async def optimize_content(request: Request, db: AsyncSession = Depends(get_db))
         updated_items = await asyncio.gather(*tasks)
         items_to_optimize = items_with_size + updated_items
         print("Оновлення розмірів завершено.")
-    # --- Кінець оновлення розмірів ---
 
-    # Зберігаємо оновлені дані в сесії
     request.session["optimization_list"] = items_to_optimize
     request.session["memory_size"] = memory_size
 
-    # --- Запуск Алгоритму ---
     optimized_results, error = solve_knapsack_problem(items_to_optimize, memory_size)
 
     total_size = round(sum(item.get('size_mb', 0) for item in items_to_optimize), 2)
@@ -87,6 +82,5 @@ async def optimize_content(request: Request, db: AsyncSession = Depends(get_db))
         context["error"] = error
         return templates.TemplateResponse("prepare.html", context)
 
-    # Додаємо результати до контексту і повертаємо
     context["optimized_results"] = optimized_results
     return templates.TemplateResponse("prepare.html", context)

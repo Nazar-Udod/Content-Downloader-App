@@ -37,7 +37,7 @@ async def get_current_user(
         db: AsyncSession = Depends(get_db)
 ) -> User | None:
     """
-    Залежність: Отримує email з сесії та повертає об'єкт User з БД.
+    Отримує email з сесії та повертає об'єкт User з БД.
     Якщо користувача немає, повертає None.
     """
     email = request.session.get("user_email")
@@ -49,12 +49,10 @@ async def get_current_user(
 
 async def get_required_user(user: User | None = Depends(get_current_user)) -> User:
     """
-    Залежність: Вимагає, щоб користувач був залогінений.
+    Вимагає, щоб користувач був залогінений.
     Якщо ні - перенаправляє на сторінку /login.
     """
     if not user:
-        # 307 - Temporary Redirect, каже браузеру повторити той самий POST/GET запит
-        # на нову адресу (тобто на /login)
         raise HTTPException(
             status_code=status.HTTP_307_TEMPORARY_REDIRECT,
             headers={"Location": "/login"}

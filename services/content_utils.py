@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models import Material
 
-# Локальні імпорти
 from config import (
     ESTIMATED_PDF_MB, ESTIMATED_SPOTIFY_MB, ESTIMATED_VIDEO_MB,
     ESTIMATED_AUDIO_MB, PDF_CACHE_DIR
@@ -19,8 +18,7 @@ from services.browser_manager import get_browser
 
 def get_external_content_size_mb(link: str, content_type: str) -> (float, bool):
     """
-    Отримує розмір для ЗОВНІШНІХ ресурсів (не для 'text').
-    (Код функції повністю скопійовано з вашого файлу)
+    Отримує розмір для зовнішніх ресурсів (не для 'text').
     """
     try:
         if content_type in ['pdf', 'doc', 'ppt']:
@@ -99,13 +97,13 @@ def get_external_content_size_mb(link: str, content_type: str) -> (float, bool):
 
 async def update_item_size(item: dict, db: AsyncSession) -> dict:
     """
-    Оновлює розмір для одного елемента, генеруючи PDF-кеш, якщо потрібно.
+    Оновлює розмір для одного елемента.
     """
     updated_item = item.copy()
     size_mb = None
     is_estimated = False
     cache_file = updated_item.get('cache_file')
-    browser_instance = get_browser()  # Отримуємо браузер з менеджера
+    browser_instance = get_browser()
 
     try:
         if updated_item['type'] == 'text':
@@ -141,7 +139,7 @@ async def update_item_size(item: dict, db: AsyncSession) -> dict:
                 size_mb = round(size_bytes / (1024 * 1024), 2)
                 is_estimated = False
             elif updated_item['cache_file'] is None:
-                pass  # Помилка вже оброблена
+                pass
             else:
                 raise Exception(f"Файл кешу {cache_path} не знайдено, хоча помилки Playwright не було.")
 
@@ -150,7 +148,6 @@ async def update_item_size(item: dict, db: AsyncSession) -> dict:
             is_estimated = True
 
         else:
-            # Для всіх інших типів (video, audio_yt, pdf, doc...)
             size_mb, is_estimated = get_external_content_size_mb(updated_item['link'], updated_item['type'])
 
     except Exception as e:
@@ -174,9 +171,8 @@ async def update_item_size(item: dict, db: AsyncSession) -> dict:
             )
             material = result.scalars().first()
 
-            # Оновлюємо, тільки якщо матеріал існує і розмір ще не встановлено
             if material and material.Size is None:
-                material.Size = int(size_mb * 1024 * 1024)  # Конвертуємо MB в байти
+                material.Size = int(size_mb * 1024 * 1024)
                 await db.commit()
                 print(f"Оновлено розмір в БД (в байтах): {material.URL}")
         except Exception as e:
@@ -189,7 +185,6 @@ async def update_item_size(item: dict, db: AsyncSession) -> dict:
 async def generate_pdf_for_download(url: str) -> (bytes, str, str | None):
     """
     Генерує PDF для негайного завантаження.
-    Повертає (pdf_content, filename, error_message)
     """
     browser_instance = get_browser()
     if browser_instance is None:

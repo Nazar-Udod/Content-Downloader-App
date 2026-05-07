@@ -77,7 +77,7 @@ async def add_to_list(request: Request):
 @router.get("/optimization-list", response_class=HTMLResponse)
 async def get_optimization_list(request: Request):
     """
-    Відображає сторінку налаштування ("prepare.html").
+    Відображає сторінку налаштування.
     """
     items = request.session.get("optimization_list", [])
     total_size = sum(item.get('size_mb', 0) for item in items if item.get('size_mb'))

@@ -1,6 +1,5 @@
 from playwright.async_api import async_playwright, Browser, Playwright
 
-# --- Глобальні змінні Playwright ---
 _playwright_context: Playwright | None = None
 _browser_instance: Browser | None = None
 
@@ -15,7 +14,6 @@ async def start_browser():
     print("Запуск Playwright...")
     try:
         _playwright_context = await async_playwright().start()
-        # Ми запускаємо лише chromium, оскільки він найкраще підходить для PDF
         _browser_instance = await _playwright_context.chromium.launch()
         print("Браузер Chromium (Playwright) успішно запущено.")
     except Exception as e:

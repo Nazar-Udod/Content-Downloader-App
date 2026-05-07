@@ -1,6 +1,6 @@
 import serpapi
 from fastapi import APIRouter, Request, Form, Depends
-from fastapi.responses import RedirectResponse  # <-- Змінено
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import SERPAPI_API_KEY
@@ -67,5 +67,4 @@ async def search_content(
         request.session["search_error"] = f"Виникла помилка під час пошуку: {e}"
         request.session["search_query"] = query
 
-    # Перенаправляємо користувача на головну сторінку (GET /)
     return RedirectResponse(url="/", status_code=303)

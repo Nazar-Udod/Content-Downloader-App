@@ -11,12 +11,8 @@ async def add_to_history(db: AsyncSession, user: User, url: str, type_str: str):
     Додає матеріал до історії користувача.
     Створює матеріал, якщо він не існує, і записує подію завантаження.
     """
-    # 1. Знаходимо або створюємо матеріал
     material = await get_or_create_material(db, url, type_str)
 
-    # 2. Створюємо запис в історії
-    # Ми не перевіряємо наявність, а просто додаємо новий запис
-    # кожного разу, щоб фіксувати кожну взаємодію.
     history_entry = HistoryMaterial(
         UserID=user.UserID,
         MaterialID=material.MaterialID
@@ -36,7 +32,7 @@ async def get_user_history(db: AsyncSession, user: User) -> list[HistoryMaterial
         .options(
             selectinload(HistoryMaterial.material)
         )
-        .order_by(HistoryMaterial.LoadDate.desc())  # Новіші спочатку
+        .order_by(HistoryMaterial.LoadDate.desc())
     )
     return result.scalars().all()
 

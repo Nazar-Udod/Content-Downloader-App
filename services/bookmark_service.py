@@ -43,7 +43,6 @@ async def get_user_folders_with_bookmarks(db: AsyncSession, user: User) -> list[
         )
         .order_by(BookmarkFolder.Name)
     )
-    # unique() потрібен, щоб уникнути дублікатів папок через JOIN
     return result.scalars().unique().all()
 
 
@@ -58,7 +57,7 @@ async def get_or_create_material(db: AsyncSession, url: str, type: str) -> Mater
 
     if not material:
         print(f"Створення нового матеріалу: {url}")
-        material = Material(URL=url, Type=type, Size=None)  # Розмір буде отримано пізніше
+        material = Material(URL=url, Type=type, Size=None)
         db.add(material)
         await db.commit()
         await db.refresh(material)
@@ -68,12 +67,12 @@ async def get_or_create_material(db: AsyncSession, url: str, type: str) -> Mater
 
 async def create_bookmark(db: AsyncSession, folder_id: int, material_id: int, name: str):
     """
-    Створює сам запис закладки, що пов'язує папку і матеріал.
+    Створює запис закладки, що пов'язує папку і матеріал.
     """
     new_bookmark = Bookmark(
         FolderID=folder_id,
         MaterialID=material_id,
-        Name=name  # Власна назва, яку дав користувач
+        Name=name
     )
     db.add(new_bookmark)
     await db.commit()

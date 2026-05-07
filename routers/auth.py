@@ -11,7 +11,6 @@ from services.bookmark_service import create_default_folder
 router = APIRouter(tags=["Автентифікація"])
 
 
-# --- GET (Відображення сторінок) ---
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
@@ -33,7 +32,6 @@ async def logout(request: Request):
     return RedirectResponse(url="/", status_code=303)
 
 
-# --- POST (Обробка форм) ---
 
 @router.post("/login")
 async def login_submit(request: Request, db: AsyncSession = Depends(get_db)):
@@ -52,7 +50,6 @@ async def login_submit(request: Request, db: AsyncSession = Depends(get_db)):
             "email": user_data.email
         }, status_code=401)
 
-    # Зберігаємо email в сесії
     request.session["user_email"] = user.Email
 
     return RedirectResponse(url="/", status_code=303)
@@ -82,10 +79,8 @@ async def register_submit(request: Request, db: AsyncSession = Depends(get_db)):
 
     user = await create_user(db, user_data)
 
-    # Створюємо стандартну папку для закладок
     await create_default_folder(db, user)
-    
-    # Автоматично логінимо користувача
+
     request.session["user_email"] = user.Email
 
     return RedirectResponse(url="/", status_code=303)

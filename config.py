@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 # Завантажуємо змінні з .env файлу
 load_dotenv()
 
-# --- Налаштування API та Секретів ---
+# Налаштування API та секретів
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 APP_SECRET_KEY = os.getenv("APP_SECRET_KEY")
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -18,13 +18,13 @@ if not APP_SECRET_KEY:
 if not DATABASE_URL:
      print("ПОПЕРЕДЖЕННЯ: DATABASE_URL не встановлено. Додаток не зможе підключитись до БД.")
 
-# --- Налаштування Шаблонів ---
+# Налаштування шаблонів
 templates = Jinja2Templates(directory="templates")
 
-# --- Налаштування Кешу ---
+# Налаштування кешу
 PDF_CACHE_DIR = Path("pdf_cache")
 
-# --- Оцінки розмірів ---
+# Оцінки розмірів
 ESTIMATED_PDF_MB = 2.0
 ESTIMATED_SPOTIFY_MB = 5.0
 ESTIMATED_VIDEO_MB = 150.0

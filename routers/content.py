@@ -24,8 +24,6 @@ async def convert_to_pdf(
 ):
     """
     Конвертує URL в PDF.
-    Приймає АБО індекс 'convert_index' (з index.html),
-    АБО прямий 'url' (з bookmarks.html/history.html).
     """
     form_data = await request.form()
     url = None
@@ -64,11 +62,9 @@ async def convert_to_pdf(
 
 
 @router.post("/fetch-sizes")
-# 1. ДОДАЙТЕ db: AsyncSession
 async def fetch_sizes(request: Request, db: AsyncSession = Depends(get_db)):
     """
-    Примусово оновлює розміри для ВСІХ елементів у сесії,
-    використовуючи asyncio.gather для паралельної обробки.
+    Примусово оновлює розміри для всіх елементів у сесії.
     """
     optimization_list = request.session.get("optimization_list", [])
     if not optimization_list:
